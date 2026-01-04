@@ -13,11 +13,11 @@ const callDateInput = document.getElementById('callDate');
 const callTimeInput = document.getElementById('callTime');
 const notesInput = document.getElementById('notes');
 
-window.addEventListener('DOMContentLoaded', () => {
+let reminders = [];
 
+window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
     callDateInput.min = today;
-    
     callDateInput.value = today;
     
     const nextHour = new Date();
@@ -26,40 +26,37 @@ window.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('currentYear').textContent = new Date().getFullYear();
     
-    loadReminders();
-    
+    reminders = loadReminders();
+    renderReminders();
+    updateUpcomingCall();
     checkNotificationPermission();
-    
     startCountdownTimer();
 });
 
 const STORAGE_KEY = 'callremind_reminders';
 
-function saveReminders(reminders) {
+function saveReminders() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
 }
 
-// Load reminders from localStorage
 function loadReminders() {
-    const storedReminders = localStorage.getItem(STORAGE_KEY);
-    if (storedReminders) {
-        return JSON.parse(storedReminders);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        return JSON.parse(stored);
     }
     return [];
 }
-let reminders = [];
 
-// Add a new reminder
 function addReminder(reminder) {
     const newReminder = {
-        id: Date.now(), // Unique ID
+        id: Date.now(),
         ...reminder,
         createdAt: new Date().toISOString(),
-        notified: false // Track if notification has been sent
+        notified: false
     };
     
     reminders.push(newReminder);
-    saveReminders(reminders);
+    saveReminders();
     renderReminders();
     updateUpcomingCall();
     showNotification('Reminder Added', `Call reminder for ${reminder.contactName} has been scheduled!`);
@@ -69,15 +66,16 @@ function deleteReminder(id) {
     const reminderToDelete = reminders.find(r => r.id === id);
     if (reminderToDelete && confirm(`Delete reminder for ${reminderToDelete.contactName}?`)) {
         reminders = reminders.filter(reminder => reminder.id !== id);
-        saveReminders(reminders);
+        saveReminders();
         renderReminders();
         updateUpcomingCall();
         showNotification('Reminder Deleted', `Reminder for ${reminderToDelete.contactName} has been deleted.`);
     }
 }
+
 function markAsCompleted(id) {
     reminders = reminders.filter(reminder => reminder.id !== id);
-    saveReminders(reminders);
+    saveReminders();
     renderReminders();
     updateUpcomingCall();
 }
@@ -85,7 +83,6 @@ function markAsCompleted(id) {
 reminderForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    // Get form values
     const reminder = {
         contactName: contactNameInput.value.trim(),
         phoneNumber: phoneNumberInput.value.trim(),
@@ -123,20 +120,15 @@ reminderForm.addEventListener('submit', (e) => {
 });
 
 function renderReminders() {
-    // Sort reminders by date/time (soonest first)
     reminders.sort((a, b) => {
         const dateA = new Date(`${a.callDate}T${a.callTime}`);
         const dateB = new Date(`${b.callDate}T${b.callTime}`);
         return dateA - dateB;
     });
     
-    // Update count
     reminderCount.textContent = reminders.length;
-    
-    // Clear current list
     reminderList.innerHTML = '';
     
-    // Show empty state if no reminders
     if (reminders.length === 0) {
         reminderList.innerHTML = `
             <div class="empty-state">
@@ -152,11 +144,8 @@ function renderReminders() {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const now = new Date();
         const timeDiff = reminderDateTime - now;
-        
-        // Check if reminder is urgent (less than 1 hour away)
         const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000;
         
-        // Format date and time
         const formattedDate = new Date(reminder.callDate).toLocaleDateString('en-US', {
             weekday: 'short',
             year: 'numeric',
@@ -216,7 +205,6 @@ function updateUpcomingCall() {
         return;
     }
     
-    // Get the next reminder (soonest)
     const nextReminder = reminders
         .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
         .sort((a, b) => new Date(`${a.callDate}T${a.callTime}`) - new Date(`${b.callDate}T${b.callTime}`))[0];
@@ -244,7 +232,6 @@ function startCountdownTimer() {
             return;
         }
         
-        // Get the next reminder
         const nextReminder = reminders
             .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
             .sort((a, b) => new Date(`${a.callDate}T${a.callTime}`) - new Date(`${b.callDate}T${b.callTime}`))[0];
@@ -262,30 +249,27 @@ function startCountdownTimer() {
             countdownElement.textContent = 'TIME TO CALL!';
             countdownElement.classList.add('text-danger');
             
-            // Trigger notification for overdue reminder
             if (!nextReminder.notified) {
                 sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                 nextReminder.notified = true;
-                saveReminders(reminders);
+                saveReminders();
             }
         } else {
             countdownElement.classList.remove('text-danger');
             
-            // Calculate hours, minutes, seconds
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            // Check if it's time to send notification (5 minutes before)
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
                 sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
                 nextReminder.notified = true;
-                saveReminders(reminders);
+                saveReminders();
             }
         }
-    }, 1000); // Update every second
+    }, 1000);
 }
 
 function checkNotificationPermission() {
@@ -338,7 +322,6 @@ function sendBrowserNotification(title, body) {
 }
 
 function showNotification(title, message) {
-    // Create a temporary notification element
     const notificationEl = document.createElement('div');
     notificationEl.className = 'notification-toast';
     notificationEl.innerHTML = `
@@ -362,7 +345,6 @@ function showNotification(title, message) {
     
     document.body.appendChild(notificationEl);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         notificationEl.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => {
@@ -386,24 +368,18 @@ style.textContent = `
 document.head.appendChild(style);
 
 window.addEventListener('load', () => {
-    reminders = loadReminders();
-    renderReminders();
-    updateUpcomingCall();
-    
-    // Check for past reminders and clean them up
     const now = new Date();
     const validReminders = reminders.filter(reminder => {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-        return reminderDateTime > now || (now - reminderDateTime) < 24 * 60 * 60 * 1000; // Keep reminders from last 24 hours
+        return reminderDateTime > now || (now - reminderDateTime) < 24 * 60 * 60 * 1000;
     });
     
     if (validReminders.length !== reminders.length) {
         reminders = validReminders;
-        saveReminders(reminders);
+        saveReminders();
         renderReminders();
     }
 });
-
 
 window.deleteReminder = deleteReminder;
 window.markAsCompleted = markAsCompleted;
