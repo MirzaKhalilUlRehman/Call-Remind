@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>callremind - Never Forget Important Calls</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-phone-alt"></i>
+                <h1>call<span>remind</span></h1>
+            </div>
+            <p class="tagline">Never miss an important call again</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Reminder Form -->
+            <section class="form-section card">
+                <h2><i class="fas fa-plus-circle"></i> Schedule a Call Reminder</h2>
+                <form id="reminderForm">
+                    <div class="form-group">
+                        <label for="contactName"><i class="fas fa-user"></i> Contact Name *</label>
+                        <input type="text" id="contactName" placeholder="John Doe" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phoneNumber"><i class="fas fa-phone"></i> Phone Number</label>
+                        <input type="tel" id="phoneNumber" placeholder="+1 (123) 456-7890">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="callDate"><i class="fas fa-calendar"></i> Date *</label>
+                            <input type="date" id="callDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="callTime"><i class="fas fa-clock"></i> Time *</label>
+                            <input type="time" id="callTime" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes"><i class="fas fa-sticky-note"></i> Notes (Optional)</label>
+                        <textarea id="notes" placeholder="Purpose of call, agenda, etc." rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-bell"></i> Set Reminder
+                    </button>
+                </form>
+            </section>
+
+            <!-- Active Reminders -->
+            <section class="reminders-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-bell"></i> Active Reminders</h2>
+                    <span id="reminderCount" class="badge">0</span>
+                </div>
+                
+                <div id="reminderList" class="reminders-list">
+                    <!-- Reminders will be added here dynamically -->
+                    <div class="empty-state">
+                        <i class="fas fa-phone-slash"></i>
+                        <h3>No reminders yet</h3>
+                        <p>Add your first call reminder above!</p>
+                    </div>
+                </div>
+                
+                <!-- Upcoming Call -->
+                <div id="upcomingCall" class="upcoming-card card hidden">
+                    <div class="upcoming-header">
+                        <h3><i class="fas fa-star"></i> Next Call</h3>
+                        <div id="countdown" class="countdown">--:--:--</div>
+                    </div>
+                    <div class="upcoming-details">
+                        <p><strong id="upcomingContact">Contact Name</strong></p>
+                        <p><i class="far fa-clock"></i> <span id="upcomingTime">Time</span></p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>callremind &copy; <span id="currentYear"></span> | Built with <i class="fas fa-heart"></i> & JavaScript</p>
+            <div class="notification-permission">
+                <button id="enableNotifications" class="btn btn-secondary">
+                    <i class="fas fa-bell"></i> Enable Notifications
+                </button>
+                <p class="notification-status">Notifications: <span id="notificationStatus">Not enabled</span></p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
