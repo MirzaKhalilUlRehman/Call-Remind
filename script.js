@@ -21,6 +21,8 @@ const reminderDetails = document.getElementById('reminderDetails');
 
 let reminders = [];
 let reminderToDelete = null;
+let currentNextCallId = null;
+let hasScheduledRefresh = false;
 
 window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -79,6 +81,8 @@ function addReminder(reminder) {
     renderReminders();
     updateUpcomingCall();
     showNotification('Reminder Added', `Call reminder for ${reminder.contactName} has been scheduled!`);
+    
+    hasScheduledRefresh = false;
 }
 
 function deleteReminder(id) {
@@ -124,6 +128,8 @@ function confirmDelete() {
         updateUpcomingCall();
         showNotification('Reminder Deleted', `Reminder for ${reminderToDelete.contactName} has been deleted.`);
         closeModal();
+        
+        hasScheduledRefresh = false;
     }
 }
 
@@ -135,6 +141,8 @@ function markAsCompleted(id) {
         renderReminders();
         updateUpcomingCall();
         showNotification('Call Completed', `Reminder for ${reminder.contactName} marked as done.`);
+        
+        hasScheduledRefresh = false;
     }
 }
 
@@ -293,9 +301,11 @@ function startCountdownTimer() {
     setInterval(() => {
         if (reminders.length === 0) {
             countdownElement.textContent = '--:--:--';
+            hasScheduledRefresh = false;
             return;
         }
 
+        // Find the next upcoming reminder
         const nextReminder = reminders
             .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
             .sort((a, b) => {
@@ -306,7 +316,14 @@ function startCountdownTimer() {
 
         if (!nextReminder) {
             countdownElement.textContent = '--:--:--';
+            hasScheduledRefresh = false;
             return;
+        }
+
+        // Track current next call
+        if (currentNextCallId !== nextReminder.id) {
+            currentNextCallId = nextReminder.id;
+            hasScheduledRefresh = false;
         }
 
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
@@ -314,23 +331,35 @@ function startCountdownTimer() {
         const timeDiff = reminderDateTime - now;
 
         if (timeDiff <= 0) {
-            countdownElement.textContent = 'TIME TO CALL!';
-            countdownElement.classList.add('text-danger');
-
-            if (!nextReminder.notified) {
-                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
-                nextReminder.notified = true;
-                saveReminders();
+            // NEXT CALL KA TIME HO GAYA - DIRECTLY PAGE RELOAD
+            if (!hasScheduledRefresh) {
+                hasScheduledRefresh = true;
+                
+                // Pehle notification bhejo (agar required ho)
+                if (!nextReminder.notified) {
+                    sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
+                    nextReminder.notified = true;
+                    saveReminders();
+                }
+                
+                // Immediately page reload (ya thode time ke baad)
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100); // 100ms = 0.1 second - almost immediately
             }
+            
+            // Countdown element ko empty ya normal rakho (TIME TO CALL! nahi dikhayenge)
+            countdownElement.textContent = '00:00:00';
+            
         } else {
-            countdownElement.classList.remove('text-danger');
-
+            // NORMAL COUNTDOWN
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
+            // 5 minutes pehle notification
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
                 sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
                 nextReminder.notified = true;
