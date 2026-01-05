@@ -21,6 +21,7 @@ const reminderDetails = document.getElementById('reminderDetails');
 
 let reminders = [];
 let reminderToDelete = null;
+let lastUpdateTime = 0; // Track last time reminders were checked
 
 window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -71,7 +72,8 @@ function addReminder(reminder) {
         callTime: reminder.callTime,
         notes: reminder.notes || '',
         createdAt: new Date().toISOString(),
-        notified: false
+        notified: false,
+        isExpired: false // Track if reminder is expired
     };
 
     reminders.push(newReminder);
@@ -203,6 +205,7 @@ function renderReminders() {
         const now = new Date();
         const timeDiff = reminderDateTime - now;
         const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000;
+        const isExpired = timeDiff <= 0 || reminder.isExpired;
 
         const formattedDate = new Date(reminder.callDate).toLocaleDateString('en-US', {
             weekday: 'short',
@@ -217,7 +220,7 @@ function renderReminders() {
         });
 
         const reminderElement = document.createElement('div');
-        reminderElement.className = `reminder-item ${isUrgent ? 'urgent' : ''}`;
+        reminderElement.className = `reminder-item ${isUrgent ? 'urgent' : ''} ${isExpired ? 'expired' : ''}`;
         reminderElement.innerHTML = `
             <div class="reminder-header">
                 <div>
@@ -265,8 +268,14 @@ function updateUpcomingCall() {
         return;
     }
 
+    const now = new Date();
+    
+    // Sirf upcoming (future) calls dikhao
     const nextReminder = reminders
-        .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
+        .filter(r => {
+            const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
+            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED CALLS
+        })
         .sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
             const dateB = new Date(`${b.callDate}T${b.callTime}`);
@@ -290,54 +299,104 @@ function updateUpcomingCall() {
 }
 
 function startCountdownTimer() {
-    setInterval(() => {
-        if (reminders.length === 0) {
-            countdownElement.textContent = '--:--:--';
-            return;
-        }
-
-        const nextReminder = reminders
-            .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
-            .sort((a, b) => {
-                const dateA = new Date(`${a.callDate}T${a.callTime}`);
-                const dateB = new Date(`${b.callDate}T${b.callTime}`);
-                return dateA - dateB;
-            })[0];
-
-        if (!nextReminder) {
-            countdownElement.textContent = '--:--:--';
-            return;
-        }
-
-        const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
+    // Pehle wala timer clear karo agar hai toh
+    if (window.countdownInterval) {
+        clearInterval(window.countdownInterval);
+    }
+    
+    window.countdownInterval = setInterval(() => {
         const now = new Date();
+        
+        // Har 5 seconds mein reminders update karo (border change ke liye)
+        if (now.getTime() - lastUpdateTime > 5000) {
+            updateRemindersStatus(now);
+            lastUpdateTime = now.getTime();
+        }
+        
+        // SABHI UPCOMING (FUTURE) CALLS FIND KARO
+        const upcomingReminders = reminders.filter(r => {
+            const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
+            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED
+        });
+        
+        // AGAR KOI UPCOMING CALL NAHI HAI
+        if (upcomingReminders.length === 0) {
+            countdownElement.textContent = '--:--:--';
+            upcomingCall.classList.add('hidden');
+            return;
+        }
+        
+        // SABSE PEHLI UPCOMING CALL (NEXT CALL)
+        const nextReminder = upcomingReminders.sort((a, b) => {
+            const dateA = new Date(`${a.callDate}T${a.callTime}`);
+            const dateB = new Date(`${b.callDate}T${b.callTime}`);
+            return dateA - dateB;
+        })[0];
+        
+        const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
         const timeDiff = reminderDateTime - now;
-
-        if (timeDiff <= 0) {
-            countdownElement.textContent = 'TIME TO CALL!';
-            countdownElement.classList.add('text-danger');
-
-            if (!nextReminder.notified) {
-                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
-                nextReminder.notified = true;
-                saveReminders();
-            }
-        } else {
-            countdownElement.classList.remove('text-danger');
-
+        
+        // NORMAL COUNTDOWN DISPLAY
+        if (timeDiff > 0) {
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
+            
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+            
+            // UPDATE UPCOMING CALL DISPLAY
+            upcomingCall.classList.remove('hidden');
+            const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            upcomingContact.textContent = nextReminder.contactName;
+            upcomingTime.textContent = formattedTime;
+            
+            // 5 MINUTES PEHLE NOTIFICATION
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
                 sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
                 nextReminder.notified = true;
                 saveReminders();
             }
+        } else {
+            // AGAR TIME DIFF <= 0 HAI (expired call)
+            countdownElement.textContent = '--:--:--';
+            upcomingCall.classList.add('hidden');
+            
+            // Expired call ke liye notification (sirf ek baar)
+            if (!nextReminder.notified) {
+                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
+                nextReminder.notified = true;
+                nextReminder.isExpired = true;
+                saveReminders();
+            }
         }
     }, 1000);
+}
+
+// NEW FUNCTION: Real-time mein reminders ka status update karo (border change ke liye)
+function updateRemindersStatus(currentTime) {
+    let needsUpdate = false;
+    
+    reminders.forEach(reminder => {
+        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+        const timeDiff = reminderDateTime - currentTime;
+        
+        // Agar call expire ho gaya hai lekin isExpired flag nahi hai
+        if (timeDiff <= 0 && !reminder.isExpired) {
+            reminder.isExpired = true;
+            reminder.notified = true; // Notification bhej diya hai
+            needsUpdate = true;
+        }
+    });
+    
+    // Agar koi change hua hai toh UI update karo
+    if (needsUpdate) {
+        saveReminders();
+        renderReminders(); // Yehi line border color change karegi
+        updateUpcomingCall();
+    }
 }
 
 function checkNotificationPermission() {
@@ -454,5 +513,12 @@ window.addEventListener('load', () => {
         reminders = validReminders;
         saveReminders();
         renderReminders();
+    }
+});
+
+// Page unload hone se pehle timer clear karo
+window.addEventListener('beforeunload', () => {
+    if (window.countdownInterval) {
+        clearInterval(window.countdownInterval);
     }
 });
