@@ -605,3 +605,8 @@ body {
 .confirmation-modal.hidden {
     display: none;
 }
+.reminder-item.expired {
+    border-left-color: #35aadc !important;
+    border-left-width: 4px !important;
+    background-color: rgba(220, 53, 69, 0.05);
+}
