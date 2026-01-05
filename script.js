@@ -259,15 +259,20 @@ function renderReminders() {
         });
     });
 }
-
 function updateUpcomingCall() {
     if (reminders.length === 0) {
         upcomingCall.classList.add('hidden');
         return;
     }
 
+    const now = new Date();
+    
+    // Sirf upcoming (future) calls dikhao
     const nextReminder = reminders
-        .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
+        .filter(r => {
+            const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
+            return reminderDateTime > now; // ONLY FUTURE CALLS
+        })
         .sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
             const dateB = new Date(`${b.callDate}T${b.callTime}`);
@@ -289,9 +294,8 @@ function updateUpcomingCall() {
     upcomingContact.textContent = nextReminder.contactName;
     upcomingTime.textContent = formattedTime;
 }
-
 function startCountdownTimer() {
-    // Pehle wala timer clear karo agar hai toh
+    // Pehle wala timer clear karo
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
@@ -299,80 +303,119 @@ function startCountdownTimer() {
     window.countdownInterval = setInterval(() => {
         if (reminders.length === 0) {
             countdownElement.textContent = '--:--:--';
-            if (refreshTimer) {
-                clearTimeout(refreshTimer);
-                refreshTimer = null;
-            }
             return;
         }
 
-        // Sirf upcoming (future) calls
-        const upcomingReminders = reminders.filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date());
+        // CURRENT TIME
+        const now = new Date();
         
+        // SABHI UPCOMING (FUTURE) CALLS FIND KARO
+        const upcomingReminders = reminders.filter(r => {
+            const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
+            return reminderDateTime > now;
+        });
+        
+        // AGAR KOI UPCOMING CALL NAHI HAI
         if (upcomingReminders.length === 0) {
             countdownElement.textContent = '--:--:--';
-            if (refreshTimer) {
-                clearTimeout(refreshTimer);
-                refreshTimer = null;
-            }
+            upcomingCall.classList.add('hidden');
             return;
         }
-
-        // Sabse pehli upcoming call
+        
+        // SABSE PEHLI UPCOMING CALL (NEXT CALL)
         const nextReminder = upcomingReminders.sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
             const dateB = new Date(`${b.callDate}T${b.callTime}`);
             return dateA - dateB;
         })[0];
-
+        
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
-        const now = new Date();
         const timeDiff = reminderDateTime - now;
-
+        
+        // AGAR CALL KA TIME HO GAYA HAI (shouldn't happen, par check karte hain)
         if (timeDiff <= 0) {
-            // CALL TIME HO GAYA - PAGE REFRESH KARO
-            countdownElement.textContent = '00:00:00';
+            // IMMEDIATELY PAGE REFRESH
+            console.log('Call time reached! Refreshing immediately...');
             
-            // Pehle se koi refresh scheduled nahi hai toh schedule karo
-            if (!refreshTimer) {
-                console.log('Call time reached! Scheduling page refresh...');
-                
-                // Notification bhejo
-                if (!nextReminder.notified) {
-                    sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
-                    nextReminder.notified = true;
-                    saveReminders();
-                }
-                
-                // 2 seconds ke baad refresh
-                refreshTimer = setTimeout(() => {
-                    console.log('Refreshing page now...');
-                    window.location.reload();
-                }, 2000);
-            }
-        } else {
-            // NORMAL COUNTDOWN
-            if (refreshTimer) {
-                clearTimeout(refreshTimer);
-                refreshTimer = null;
-            }
-            
-            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-            countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            // 5 minutes pehle notification
-            if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
-                sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
+            // Notification
+            if (!nextReminder.notified) {
+                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                 nextReminder.notified = true;
                 saveReminders();
             }
+            
+            // Refresh the page immediately
+            setTimeout(() => {
+                window.location.reload();
+            }, 100); // 0.1 seconds ke baad
+            return;
+        }
+        
+        // NORMAL COUNTDOWN DISPLAY
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        
+        countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // UPDATE UPCOMING CALL DISPLAY
+        upcomingCall.classList.remove('hidden');
+        const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        upcomingContact.textContent = nextReminder.contactName;
+        upcomingTime.textContent = formattedTime;
+        
+        // CHECK FOR EXPIRED CALLS (jo time ho gaye hain)
+        checkAndRemoveExpiredCalls(now);
+        
+        // 5 MINUTES PEHLE NOTIFICATION
+        if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
+            sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
+            nextReminder.notified = true;
+            saveReminders();
         }
     }, 1000);
 }
 
+// NEW FUNCTION: Expired calls ko check karo aur agar koi call ka time ho gaya ho toh refresh karo
+function checkAndRemoveExpiredCalls(currentTime) {
+    let shouldRefresh = false;
+    
+    // Check all reminders
+    for (let i = reminders.length - 1; i >= 0; i--) {
+        const reminder = reminders[i];
+        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+        const timeDiff = reminderDateTime - currentTime;
+        
+        // Agar call ka time ho gaya hai (1 minute tolerance)
+        if (timeDiff <= 0) {
+            console.log(`Call expired: ${reminder.contactName} at ${reminder.callTime}`);
+            
+            // Notification bhejo agar nahi bheja hai
+            if (!reminder.notified) {
+                sendBrowserNotification('Time to Call!', `It's time to call ${reminder.contactName}!`);
+                reminder.notified = true;
+            }
+            
+            // Expired call ko remove karo
+            reminders.splice(i, 1);
+            shouldRefresh = true;
+        }
+    }
+    
+    // Agar koi bhi call expire hua hai, toh save aur refresh karo
+    if (shouldRefresh) {
+        saveReminders();
+        
+        // 1 second ke baad refresh (taaki user dekh sake notification)
+        setTimeout(() => {
+            console.log('Expired call found. Refreshing page...');
+            window.location.reload();
+        }, 1000);
+    }
+}
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
         notificationStatus.textContent = 'Not supported';
