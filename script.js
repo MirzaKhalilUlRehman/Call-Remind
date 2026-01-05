@@ -21,8 +21,7 @@ const reminderDetails = document.getElementById('reminderDetails');
 
 let reminders = [];
 let reminderToDelete = null;
-let currentNextCallId = null;
-let hasScheduledRefresh = false;
+let refreshTimer = null; // Refresh timer ko track karne ke liye
 
 window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -81,8 +80,6 @@ function addReminder(reminder) {
     renderReminders();
     updateUpcomingCall();
     showNotification('Reminder Added', `Call reminder for ${reminder.contactName} has been scheduled!`);
-    
-    hasScheduledRefresh = false;
 }
 
 function deleteReminder(id) {
@@ -128,8 +125,6 @@ function confirmDelete() {
         updateUpcomingCall();
         showNotification('Reminder Deleted', `Reminder for ${reminderToDelete.contactName} has been deleted.`);
         closeModal();
-        
-        hasScheduledRefresh = false;
     }
 }
 
@@ -141,8 +136,6 @@ function markAsCompleted(id) {
         renderReminders();
         updateUpcomingCall();
         showNotification('Call Completed', `Reminder for ${reminder.contactName} marked as done.`);
-        
-        hasScheduledRefresh = false;
     }
 }
 
@@ -298,61 +291,72 @@ function updateUpcomingCall() {
 }
 
 function startCountdownTimer() {
-    setInterval(() => {
+    // Pehle wala timer clear karo agar hai toh
+    if (window.countdownInterval) {
+        clearInterval(window.countdownInterval);
+    }
+    
+    window.countdownInterval = setInterval(() => {
         if (reminders.length === 0) {
             countdownElement.textContent = '--:--:--';
-            hasScheduledRefresh = false;
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+                refreshTimer = null;
+            }
             return;
         }
 
-        // Find the next upcoming reminder
-        const nextReminder = reminders
-            .filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date())
-            .sort((a, b) => {
-                const dateA = new Date(`${a.callDate}T${a.callTime}`);
-                const dateB = new Date(`${b.callDate}T${b.callTime}`);
-                return dateA - dateB;
-            })[0];
-
-        if (!nextReminder) {
+        // Sirf upcoming (future) calls
+        const upcomingReminders = reminders.filter(r => new Date(`${r.callDate}T${r.callTime}`) > new Date());
+        
+        if (upcomingReminders.length === 0) {
             countdownElement.textContent = '--:--:--';
-            hasScheduledRefresh = false;
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+                refreshTimer = null;
+            }
             return;
         }
 
-        // Track current next call
-        if (currentNextCallId !== nextReminder.id) {
-            currentNextCallId = nextReminder.id;
-            hasScheduledRefresh = false;
-        }
+        // Sabse pehli upcoming call
+        const nextReminder = upcomingReminders.sort((a, b) => {
+            const dateA = new Date(`${a.callDate}T${a.callTime}`);
+            const dateB = new Date(`${b.callDate}T${b.callTime}`);
+            return dateA - dateB;
+        })[0];
 
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
         const now = new Date();
         const timeDiff = reminderDateTime - now;
 
         if (timeDiff <= 0) {
-            // NEXT CALL KA TIME HO GAYA - DIRECTLY PAGE RELOAD
-            if (!hasScheduledRefresh) {
-                hasScheduledRefresh = true;
+            // CALL TIME HO GAYA - PAGE REFRESH KARO
+            countdownElement.textContent = '00:00:00';
+            
+            // Pehle se koi refresh scheduled nahi hai toh schedule karo
+            if (!refreshTimer) {
+                console.log('Call time reached! Scheduling page refresh...');
                 
-                // Pehle notification bhejo (agar required ho)
+                // Notification bhejo
                 if (!nextReminder.notified) {
                     sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                     nextReminder.notified = true;
                     saveReminders();
                 }
                 
-                // Immediately page reload (ya thode time ke baad)
-                setTimeout(() => {
+                // 2 seconds ke baad refresh
+                refreshTimer = setTimeout(() => {
+                    console.log('Refreshing page now...');
                     window.location.reload();
-                }, 100); // 100ms = 0.1 second - almost immediately
+                }, 2000);
             }
-            
-            // Countdown element ko empty ya normal rakho (TIME TO CALL! nahi dikhayenge)
-            countdownElement.textContent = '00:00:00';
-            
         } else {
             // NORMAL COUNTDOWN
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+                refreshTimer = null;
+            }
+            
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
@@ -483,5 +487,15 @@ window.addEventListener('load', () => {
         reminders = validReminders;
         saveReminders();
         renderReminders();
+    }
+});
+
+// Page unload hone se pehle timers clear karo
+window.addEventListener('beforeunload', () => {
+    if (window.countdownInterval) {
+        clearInterval(window.countdownInterval);
+    }
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
     }
 });
