@@ -21,7 +21,6 @@ const reminderDetails = document.getElementById('reminderDetails');
 
 let reminders = [];
 let reminderToDelete = null;
-let refreshTimer = null; // Refresh timer ko track karne ke liye
 
 window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -204,6 +203,7 @@ function renderReminders() {
         const now = new Date();
         const timeDiff = reminderDateTime - now;
         const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000;
+        const isExpired = timeDiff <= 0;
 
         const formattedDate = new Date(reminder.callDate).toLocaleDateString('en-US', {
             weekday: 'short',
@@ -218,12 +218,13 @@ function renderReminders() {
         });
 
         const reminderElement = document.createElement('div');
-        reminderElement.className = `reminder-item ${isUrgent ? 'urgent' : ''}`;
+        reminderElement.className = `reminder-item ${isUrgent ? 'urgent' : ''} ${isExpired ? 'expired' : ''}`;
         reminderElement.innerHTML = `
             <div class="reminder-header">
                 <div>
                     <div class="reminder-contact">
                         <i class="fas fa-user"></i> ${reminder.contactName}
+                        ${isExpired ? '<span class="expired-badge">TIME TO CALL!</span>' : ''}
                     </div>
                     ${reminder.phoneNumber ? `<div class="reminder-phone"><i class="fas fa-phone"></i> ${reminder.phoneNumber}</div>` : ''}
                 </div>
@@ -259,6 +260,7 @@ function renderReminders() {
         });
     });
 }
+
 function updateUpcomingCall() {
     if (reminders.length === 0) {
         upcomingCall.classList.add('hidden');
@@ -294,19 +296,14 @@ function updateUpcomingCall() {
     upcomingContact.textContent = nextReminder.contactName;
     upcomingTime.textContent = formattedTime;
 }
+
 function startCountdownTimer() {
-    // Pehle wala timer clear karo
+    // Pehle wala timer clear karo agar hai toh
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
     
     window.countdownInterval = setInterval(() => {
-        if (reminders.length === 0) {
-            countdownElement.textContent = '--:--:--';
-            return;
-        }
-
-        // CURRENT TIME
         const now = new Date();
         
         // SABHI UPCOMING (FUTURE) CALLS FIND KARO
@@ -332,90 +329,71 @@ function startCountdownTimer() {
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
         const timeDiff = reminderDateTime - now;
         
-        // AGAR CALL KA TIME HO GAYA HAI (shouldn't happen, par check karte hain)
-        if (timeDiff <= 0) {
-            // IMMEDIATELY PAGE REFRESH
-            console.log('Call time reached! Refreshing immediately...');
+        // NORMAL COUNTDOWN DISPLAY
+        if (timeDiff > 0) {
+            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             
-            // Notification
+            countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // UPDATE UPCOMING CALL DISPLAY
+            upcomingCall.classList.remove('hidden');
+            const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            upcomingContact.textContent = nextReminder.contactName;
+            upcomingTime.textContent = formattedTime;
+            
+            // 5 MINUTES PEHLE NOTIFICATION
+            if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
+                sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
+                nextReminder.notified = true;
+                saveReminders();
+            }
+        } else {
+            // AGAR TIME DIFF <= 0 HAI (shouldn't happen but handle karte hain)
+            countdownElement.textContent = '00:00:00';
+            
+            // Expired call ke liye notification
             if (!nextReminder.notified) {
                 sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                 nextReminder.notified = true;
                 saveReminders();
             }
             
-            // Refresh the page immediately
-            setTimeout(() => {
-                window.location.reload();
-            }, 100); // 0.1 seconds ke baad
-            return;
-        }
-        
-        // NORMAL COUNTDOWN DISPLAY
-        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-        
-        countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        // UPDATE UPCOMING CALL DISPLAY
-        upcomingCall.classList.remove('hidden');
-        const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        upcomingContact.textContent = nextReminder.contactName;
-        upcomingTime.textContent = formattedTime;
-        
-        // CHECK FOR EXPIRED CALLS (jo time ho gaye hain)
-        checkAndRemoveExpiredCalls(now);
-        
-        // 5 MINUTES PEHLE NOTIFICATION
-        if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
-            sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
-            nextReminder.notified = true;
-            saveReminders();
+            // Automatically next call show ho jayega next iteration mein
+            // kyunki upcomingReminders sirf future calls lega
         }
     }, 1000);
 }
 
-// NEW FUNCTION: Expired calls ko check karo aur agar koi call ka time ho gaya ho toh refresh karo
-function checkAndRemoveExpiredCalls(currentTime) {
-    let shouldRefresh = false;
+// AUTO REMOVE EXPIRED CALLS FUNCTION (OPTIONAL)
+// Agar aap chahte ho ki expired calls automatically remove ho jaye after some time
+function autoRemoveExpiredCalls() {
+    const now = new Date();
+    const beforeCount = reminders.length;
     
-    // Check all reminders
-    for (let i = reminders.length - 1; i >= 0; i--) {
-        const reminder = reminders[i];
-        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-        const timeDiff = reminderDateTime - currentTime;
-        
-        // Agar call ka time ho gaya hai (1 minute tolerance)
-        if (timeDiff <= 0) {
-            console.log(`Call expired: ${reminder.contactName} at ${reminder.callTime}`);
-            
-            // Notification bhejo agar nahi bheja hai
-            if (!reminder.notified) {
-                sendBrowserNotification('Time to Call!', `It's time to call ${reminder.contactName}!`);
-                reminder.notified = true;
-            }
-            
-            // Expired call ko remove karo
-            reminders.splice(i, 1);
-            shouldRefresh = true;
-        }
-    }
+    // Sirf active reminders rakho (jo 30 minutes ke andar expire hue hain ya future mein hain)
+    reminders = reminders.filter(r => {
+        const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
+        const timeDiff = reminderDateTime - now;
+        // Agar call ka time 30 minutes se kam pehle hua hai toh rakho, nahi toh hatao
+        return timeDiff > -30 * 60 * 1000; // 30 minutes tolerance for expired calls
+    });
     
-    // Agar koi bhi call expire hua hai, toh save aur refresh karo
-    if (shouldRefresh) {
+    // Agar koi call remove hua hai
+    if (reminders.length < beforeCount) {
         saveReminders();
-        
-        // 1 second ke baad refresh (taaki user dekh sake notification)
-        setTimeout(() => {
-            console.log('Expired call found. Refreshing page...');
-            window.location.reload();
-        }, 1000);
+        renderReminders();
+        updateUpcomingCall();
     }
 }
+
+// Har minute auto remove check karo (optional)
+setInterval(autoRemoveExpiredCalls, 60000);
+
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
         notificationStatus.textContent = 'Not supported';
@@ -533,12 +511,9 @@ window.addEventListener('load', () => {
     }
 });
 
-// Page unload hone se pehle timers clear karo
+// Page unload hone se pehle timer clear karo
 window.addEventListener('beforeunload', () => {
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
-    }
-    if (refreshTimer) {
-        clearTimeout(refreshTimer);
     }
 });
