@@ -21,6 +21,7 @@ const reminderDetails = document.getElementById('reminderDetails');
 
 let reminders = [];
 let reminderToDelete = null;
+let lastUpdateTime = 0; // Track last time reminders were checked
 
 window.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -71,7 +72,8 @@ function addReminder(reminder) {
         callTime: reminder.callTime,
         notes: reminder.notes || '',
         createdAt: new Date().toISOString(),
-        notified: false
+        notified: false,
+        isExpired: false // Track if reminder is expired
     };
 
     reminders.push(newReminder);
@@ -203,7 +205,7 @@ function renderReminders() {
         const now = new Date();
         const timeDiff = reminderDateTime - now;
         const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000;
-        const isExpired = timeDiff <= 0;
+        const isExpired = timeDiff <= 0 || reminder.isExpired;
 
         const formattedDate = new Date(reminder.callDate).toLocaleDateString('en-US', {
             weekday: 'short',
@@ -224,7 +226,6 @@ function renderReminders() {
                 <div>
                     <div class="reminder-contact">
                         <i class="fas fa-user"></i> ${reminder.contactName}
-                        ${isExpired ? '<span class="expired-badge">TIME TO CALL!</span>' : ''}
                     </div>
                     ${reminder.phoneNumber ? `<div class="reminder-phone"><i class="fas fa-phone"></i> ${reminder.phoneNumber}</div>` : ''}
                 </div>
@@ -273,7 +274,7 @@ function updateUpcomingCall() {
     const nextReminder = reminders
         .filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-            return reminderDateTime > now; // ONLY FUTURE CALLS
+            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED CALLS
         })
         .sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
@@ -306,10 +307,16 @@ function startCountdownTimer() {
     window.countdownInterval = setInterval(() => {
         const now = new Date();
         
+        // Har 5 seconds mein reminders update karo (border change ke liye)
+        if (now.getTime() - lastUpdateTime > 5000) {
+            updateRemindersStatus(now);
+            lastUpdateTime = now.getTime();
+        }
+        
         // SABHI UPCOMING (FUTURE) CALLS FIND KARO
         const upcomingReminders = reminders.filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-            return reminderDateTime > now;
+            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED
         });
         
         // AGAR KOI UPCOMING CALL NAHI HAI
@@ -353,46 +360,44 @@ function startCountdownTimer() {
                 saveReminders();
             }
         } else {
-            // AGAR TIME DIFF <= 0 HAI (shouldn't happen but handle karte hain)
-            countdownElement.textContent = '00:00:00';
+            // AGAR TIME DIFF <= 0 HAI (expired call)
+            countdownElement.textContent = '--:--:--';
+            upcomingCall.classList.add('hidden');
             
-            // Expired call ke liye notification
+            // Expired call ke liye notification (sirf ek baar)
             if (!nextReminder.notified) {
                 sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                 nextReminder.notified = true;
+                nextReminder.isExpired = true;
                 saveReminders();
             }
-            
-            // Automatically next call show ho jayega next iteration mein
-            // kyunki upcomingReminders sirf future calls lega
         }
     }, 1000);
 }
 
-// AUTO REMOVE EXPIRED CALLS FUNCTION (OPTIONAL)
-// Agar aap chahte ho ki expired calls automatically remove ho jaye after some time
-function autoRemoveExpiredCalls() {
-    const now = new Date();
-    const beforeCount = reminders.length;
+// NEW FUNCTION: Real-time mein reminders ka status update karo (border change ke liye)
+function updateRemindersStatus(currentTime) {
+    let needsUpdate = false;
     
-    // Sirf active reminders rakho (jo 30 minutes ke andar expire hue hain ya future mein hain)
-    reminders = reminders.filter(r => {
-        const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-        const timeDiff = reminderDateTime - now;
-        // Agar call ka time 30 minutes se kam pehle hua hai toh rakho, nahi toh hatao
-        return timeDiff > -30 * 60 * 1000; // 30 minutes tolerance for expired calls
+    reminders.forEach(reminder => {
+        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+        const timeDiff = reminderDateTime - currentTime;
+        
+        // Agar call expire ho gaya hai lekin isExpired flag nahi hai
+        if (timeDiff <= 0 && !reminder.isExpired) {
+            reminder.isExpired = true;
+            reminder.notified = true; // Notification bhej diya hai
+            needsUpdate = true;
+        }
     });
     
-    // Agar koi call remove hua hai
-    if (reminders.length < beforeCount) {
+    // Agar koi change hua hai toh UI update karo
+    if (needsUpdate) {
         saveReminders();
-        renderReminders();
+        renderReminders(); // Yehi line border color change karegi
         updateUpcomingCall();
     }
 }
-
-// Har minute auto remove check karo (optional)
-setInterval(autoRemoveExpiredCalls, 60000);
 
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
