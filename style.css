@@ -7,14 +7,22 @@
 :root {
     --primary: #4361ee;
     --primary-dark: #3a56d4;
+    --primary-light: #eef2ff;
     --secondary: #7209b7;
     --success: #4cc9f0;
+    --success-light: #d1f5ff;
+    --success-dark: #00a8e8;
     --danger: #f72585;
+    --danger-light: #ffe6ef;
+    --danger-dark: #d90429;
     --warning: #f8961e;
+    --warning-light: #fff3e0;
+    --warning-dark: #e85d04;
     --light: #f8f9fa;
     --dark: #212529;
     --gray: #6c757d;
     --light-gray: #e9ecef;
+    --border-color: #dee2e6;
     --border-radius: 12px;
     --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     --transition: all 0.3s ease;
@@ -217,6 +225,23 @@ body {
     background-color: #e11575;
 }
 
+.btn-outline-danger {
+    background-color: white;
+    color: var(--danger);
+    border: 2px solid var(--danger);
+    padding: 12px 24px;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--danger);
+    color: white;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
 .section-header {
     display: flex;
     align-items: center;
@@ -279,6 +304,13 @@ body {
     0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.4); }
     70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
     100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
+}
+
+.reminder-item.expired {
+    border-left-color: #35aadc !important;
+    border-left-width: 4px !important;
+    background-color: rgba(220, 53, 69, 0.05);
+    opacity: 0.8;
 }
 
 .reminder-header {
@@ -360,6 +392,7 @@ body {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     color: white;
     animation: slideIn 0.5s ease;
+    margin-bottom: 25px;
 }
 
 @keyframes slideIn {
@@ -404,6 +437,132 @@ body {
     font-size: 1.1rem;
 }
 
+/* Notification Section Styles */
+.notification-section {
+    margin-top: 20px;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.notification-header h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4rem;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-status {
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background-color: var(--light-gray);
+    font-size: 0.9rem;
+}
+
+.notification-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* Notification Card */
+.notification-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-top: 1rem;
+    border: 1px solid var(--border-color);
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
+}
+
+.notification-card.hidden {
+    display: none;
+}
+
+.notification-card-header {
+    background: var(--primary-light);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.notification-card-header i {
+    font-size: 1.2rem;
+}
+
+.notification-card-body {
+    padding: 16px;
+    background: var(--light);
+    color: var(--dark);
+}
+
+.notification-card-footer {
+    padding: 12px 16px;
+    background: white;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+}
+
+.close-card-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: auto;
+    color: var(--gray);
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.close-card-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Text Colors */
+.text-success { 
+    color: var(--success-dark) !important; 
+    background-color: var(--success-light) !important;
+}
+
+.text-danger { 
+    color: var(--danger-dark) !important; 
+    background-color: var(--danger-light) !important;
+}
+
+.text-warning { 
+    color: var(--warning-dark) !important; 
+    background-color: var(--warning-light) !important;
+}
+
 .hidden {
     display: none;
 }
@@ -428,76 +587,6 @@ body {
     color: var(--danger);
 }
 
-.notification-permission {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-}
-
-.notification-status {
-    font-size: 0.95rem;
-}
-
-#notificationStatus {
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: 4px;
-    background-color: var(--light-gray);
-}
-
-.text-success { color: #28a745; }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
-
-@media (max-width: 768px) {
-    .logo {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .logo h1 {
-        font-size: 2.5rem;
-    }
-    
-    .tagline {
-        font-size: 1rem;
-    }
-    
-    .form-section h2,
-    .section-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .countdown {
-        font-size: 1.4rem;
-        padding: 8px 16px;
-    }
-    
-    .reminder-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    body {
-        padding: 10px;
-    }
-    
-    .header, .card {
-        padding: 20px 15px;
-    }
-    
-    .logo h1 {
-        font-size: 2rem;
-    }
-    
-    .btn {
-        padding: 12px 20px;
-    }
-}
 /* Confirmation Modal */
 .confirmation-modal {
     position: fixed;
@@ -605,80 +694,81 @@ body {
 .confirmation-modal.hidden {
     display: none;
 }
-.reminder-item.expired {
-    border-left-color: #35aadc !important;
-    border-left-width: 4px !important;
-    background-color: rgba(220, 53, 69, 0.05);
-}
-/* CSS mein yeh styles add karein */
-.notification-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    margin-top: 1rem;
-    border: 1px solid var(--border-color);
-    animation: slideDown 0.3s ease;
-    overflow: hidden;
-}
 
-.notification-card.hidden {
-    display: none;
-}
-
-.notification-card-header {
-    background: var(--primary-light);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--primary-dark);
-    font-weight: 600;
-}
-
-.notification-card-header i {
-    font-size: 1.2rem;
-}
-
-.notification-card-body {
-    padding: 16px;
-    background: var(--light-bg);
-}
-
-.notification-card-footer {
-    padding: 12px 16px;
-    background: white;
-    border-top: 1px solid var(--border-color);
-    text-align: right;
-}
-
-.close-card-btn {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    margin-left: auto;
-    color: var(--text-muted);
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-}
-
-.close-card-btn:hover {
-    background: rgba(0,0,0,0.1);
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
+/* Responsive Design */
+@media (max-width: 768px) {
+    .logo {
+        flex-direction: column;
+        gap: 10px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    
+    .logo h1 {
+        font-size: 2.5rem;
+    }
+    
+    .tagline {
+        font-size: 1rem;
+    }
+    
+    .form-section h2,
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .countdown {
+        font-size: 1.4rem;
+        padding: 8px 16px;
+    }
+    
+    .reminder-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .notification-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .notification-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .notification-buttons .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header, .card {
+        padding: 20px 15px;
+    }
+    
+    .logo h1 {
+        font-size: 2rem;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+    }
+    
+    .modal-content {
+        padding: 20px 15px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
     }
 }
