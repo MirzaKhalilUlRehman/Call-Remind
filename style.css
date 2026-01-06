@@ -609,8 +609,76 @@ body {
     border-left-color: #35aadc !important;
     border-left-width: 4px !important;
     background-color: rgba(220, 53, 69, 0.05);
-<<<<<<< HEAD
 }
-=======
+/* CSS mein yeh styles add karein */
+.notification-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-top: 1rem;
+    border: 1px solid var(--border-color);
+    animation: slideDown 0.3s ease;
+    overflow: hidden;
 }
->>>>>>> 4f11d5978562a544eca5c4d380676979e8c47b8e
+
+.notification-card.hidden {
+    display: none;
+}
+
+.notification-card-header {
+    background: var(--primary-light);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.notification-card-header i {
+    font-size: 1.2rem;
+}
+
+.notification-card-body {
+    padding: 16px;
+    background: var(--light-bg);
+}
+
+.notification-card-footer {
+    padding: 12px 16px;
+    background: white;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+}
+
+.close-card-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: auto;
+    color: var(--text-muted);
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.close-card-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
