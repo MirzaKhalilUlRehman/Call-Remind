@@ -135,7 +135,6 @@ function handleEnableNotifications() {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
             showNotificationCard('Notifications Enabled', 'You will now receive call reminders!', 'success');
-            // Show success toast notification
             showNotification('Success', 'Notifications have been enabled!');
         } else if (permission === 'denied') {
             showNotificationCard('Notifications Blocked', 'You have blocked notifications. Please enable them in browser settings.', 'error');
@@ -477,7 +476,7 @@ function updateRemindersStatus(currentTime) {
     }
 }
 
-// Notification functions
+// Notification functions - YAHAN MAIN CHANGE KAR RAHA HOON
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
         notificationStatus.textContent = 'Not supported';
@@ -498,11 +497,49 @@ function checkNotificationPermission() {
         enableNotificationsBtn.style.display = 'none';
         disableNotificationsBtn.style.display = 'none';
     } else {
+        // Jab user ne abhi tak permission nahi diya hai (default state)
         notificationStatus.textContent = 'Click to enable';
         notificationStatus.className = 'text-warning';
         enableNotificationsBtn.style.display = 'inline-flex';
         disableNotificationsBtn.style.display = 'none';
     }
+}
+
+// Yeh new function add karein: Manual notification permission check karne ke liye
+function checkAndReEnableNotifications() {
+    // Har 30 seconds mein check karein agar notifications disabled hain
+    setInterval(() => {
+        if ('Notification' in window) {
+            // Agar permission "denied" hai (user ne block kar diya hai)
+            if (Notification.permission === 'denied') {
+                notificationStatus.textContent = 'Blocked';
+                notificationStatus.className = 'text-danger';
+                enableNotificationsBtn.style.display = 'inline-flex'; // Enable button show karo
+                disableNotificationsBtn.style.display = 'none';
+                
+                // User ko inform karo ki notifications block hain
+                showNotificationCard(
+                    'Notifications Blocked',
+                    'Notifications are currently blocked. Click "Enable Notifications" to enable them again.',
+                    'warning'
+                );
+            }
+            // Agar permission "default" hai (user ne abhi tak decision nahi liya)
+            else if (Notification.permission === 'default') {
+                notificationStatus.textContent = 'Click to enable';
+                notificationStatus.className = 'text-warning';
+                enableNotificationsBtn.style.display = 'inline-flex';
+                disableNotificationsBtn.style.display = 'none';
+            }
+            // Agar permission "granted" hai
+            else if (Notification.permission === 'granted') {
+                notificationStatus.textContent = 'Enabled';
+                notificationStatus.className = 'text-success';
+                enableNotificationsBtn.style.display = 'none';
+                disableNotificationsBtn.style.display = 'inline-flex';
+            }
+        }
+    }, 30000); // 30 seconds
 }
 
 // Notification confirmation card function
@@ -617,4 +654,14 @@ window.addEventListener('load', () => {
         saveReminders();
         renderReminders();
     }
+});
+
+// Notification permission ko regularly check karne ka function call karein
+// Yeh line aapko initialize function mein add karni hai
+// Aap ise DOMContentLoaded event ke andar call kar sakte hain
+
+// Check notification permission aur regular monitoring start karein
+window.addEventListener('DOMContentLoaded', () => {
+    // Pehle wale initialization code...
+    checkAndReEnableNotifications(); // Yeh line add karein
 });
