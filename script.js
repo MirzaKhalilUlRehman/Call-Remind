@@ -1,3 +1,4 @@
+// DOM Elements
 const reminderForm = document.getElementById('reminderForm');
 const reminderList = document.getElementById('reminderList');
 const reminderCount = document.getElementById('reminderCount');
@@ -19,11 +20,34 @@ const cancelDeleteBtn = document.getElementById('cancelDelete');
 const confirmDeleteBtn = document.getElementById('confirmDelete');
 const reminderDetails = document.getElementById('reminderDetails');
 
+// New elements for notification confirmation
+const notificationConfirmation = document.getElementById('notificationConfirmation');
+const notificationCardTitle = document.getElementById('notificationCardTitle');
+const notificationCardMessage = document.getElementById('notificationCardMessage');
+const confirmNotificationBtn = document.getElementById('confirmNotification');
+const closeNotificationCardBtn = document.getElementById('closeNotificationCard');
+const disableNotificationsBtn = document.getElementById('disableNotifications');
+
 let reminders = [];
 let reminderToDelete = null;
 let lastUpdateTime = 0; // Track last time reminders were checked
 
+// Initialize the application
 window.addEventListener('DOMContentLoaded', () => {
+    initializeForm();
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    
+    reminders = loadReminders();
+    renderReminders();
+    updateUpcomingCall();
+    checkNotificationPermission();
+    startCountdownTimer();
+    
+    setupEventListeners();
+});
+
+// Initialize form with default values
+function initializeForm() {
     const today = new Date().toISOString().split('T')[0];
     callDateInput.min = today;
     callDateInput.value = today;
@@ -33,25 +57,104 @@ window.addEventListener('DOMContentLoaded', () => {
     const timeString = nextHour.getHours().toString().padStart(2, '0') + ':' +
         nextHour.getMinutes().toString().padStart(2, '0');
     callTimeInput.value = timeString;
+}
 
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-    reminders = loadReminders();
-    renderReminders();
-    updateUpcomingCall();
-    checkNotificationPermission();
-    startCountdownTimer();
-
+// Set up all event listeners
+function setupEventListeners() {
+    // Modal events
     cancelDeleteBtn.addEventListener('click', closeModal);
     confirmDeleteBtn.addEventListener('click', confirmDelete);
-
+    
     confirmationModal.addEventListener('click', (e) => {
         if (e.target === confirmationModal) {
             closeModal();
         }
     });
-});
+    
+    // Form submission
+    reminderForm.addEventListener('submit', handleFormSubmit);
+    
+    // Notification events
+    enableNotificationsBtn.addEventListener('click', handleEnableNotifications);
+    disableNotificationsBtn.addEventListener('click', handleDisableNotifications);
+    
+    // Notification card events
+    closeNotificationCardBtn.addEventListener('click', () => {
+        notificationConfirmation.classList.add('hidden');
+    });
+    
+    confirmNotificationBtn.addEventListener('click', () => {
+        notificationConfirmation.classList.add('hidden');
+    });
+    
+    notificationConfirmation.addEventListener('click', (e) => {
+        if (e.target === notificationConfirmation) {
+            notificationConfirmation.classList.add('hidden');
+        }
+    });
+    
+    // Clear timer on page unload
+    window.addEventListener('beforeunload', () => {
+        if (window.countdownInterval) {
+            clearInterval(window.countdownInterval);
+        }
+    });
+}
 
+// Form submission handler
+function handleFormSubmit(e) {
+    e.preventDefault();
+
+    const reminder = {
+        contactName: contactNameInput.value.trim(),
+        phoneNumber: phoneNumberInput.value.trim(),
+        callDate: callDateInput.value,
+        callTime: callTimeInput.value,
+        notes: notesInput.value.trim()
+    };
+
+    if (!reminder.contactName) {
+        showNotification('Error', 'Please enter a contact name');
+        contactNameInput.focus();
+        return;
+    }
+
+    const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+    if (reminderDateTime <= new Date()) {
+        showNotification('Error', 'Please select a future date and time');
+        return;
+    }
+
+    addReminder(reminder);
+    resetForm();
+    contactNameInput.focus();
+}
+
+// Notification permission handlers
+function handleEnableNotifications() {
+    Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+            showNotificationCard('Notifications Enabled', 'You will now receive call reminders!', 'success');
+            // Show success toast notification
+            showNotification('Success', 'Notifications have been enabled!');
+        } else if (permission === 'denied') {
+            showNotificationCard('Notifications Blocked', 'You have blocked notifications. Please enable them in browser settings.', 'error');
+        }
+        checkNotificationPermission();
+    });
+}
+
+function handleDisableNotifications() {
+    if (Notification.permission === 'granted') {
+        showNotificationCard(
+            'Disable Notifications', 
+            'To disable notifications:<br>1. Click on the lock icon in address bar<br>2. Change "Notifications" to "Block"<br>3. Refresh the page',
+            'warning'
+        );
+    }
+}
+
+// Local Storage functions
 const STORAGE_KEY = 'callremind_reminders';
 
 function saveReminders() {
@@ -63,6 +166,7 @@ function loadReminders() {
     return stored ? JSON.parse(stored) : [];
 }
 
+// Reminder CRUD operations
 function addReminder(reminder) {
     const newReminder = {
         id: Date.now(),
@@ -73,7 +177,7 @@ function addReminder(reminder) {
         notes: reminder.notes || '',
         createdAt: new Date().toISOString(),
         notified: false,
-        isExpired: false // Track if reminder is expired
+        isExpired: false
     };
 
     reminders.push(newReminder);
@@ -140,34 +244,6 @@ function markAsCompleted(id) {
     }
 }
 
-reminderForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const reminder = {
-        contactName: contactNameInput.value.trim(),
-        phoneNumber: phoneNumberInput.value.trim(),
-        callDate: callDateInput.value,
-        callTime: callTimeInput.value,
-        notes: notesInput.value.trim()
-    };
-
-    if (!reminder.contactName) {
-        showNotification('Error', 'Please enter a contact name');
-        contactNameInput.focus();
-        return;
-    }
-
-    const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-    if (reminderDateTime <= new Date()) {
-        showNotification('Error', 'Please select a future date and time');
-        return;
-    }
-
-    addReminder(reminder);
-    resetForm();
-    contactNameInput.focus();
-});
-
 function resetForm() {
     reminderForm.reset();
     const today = new Date().toISOString().split('T')[0];
@@ -179,6 +255,7 @@ function resetForm() {
         nextHour.getMinutes().toString().padStart(2, '0');
 }
 
+// UI Rendering functions
 function renderReminders() {
     reminders.sort((a, b) => {
         const dateA = new Date(`${a.callDate}T${a.callTime}`);
@@ -247,6 +324,7 @@ function renderReminders() {
         reminderList.appendChild(reminderElement);
     });
 
+    // Attach event listeners to dynamic buttons
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = parseInt(e.currentTarget.dataset.id);
@@ -270,7 +348,7 @@ function updateUpcomingCall() {
 
     const now = new Date();
     
-    // Sirf upcoming (future) calls dikhao
+    // Only show upcoming (future) calls
     const nextReminder = reminders
         .filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
@@ -298,8 +376,9 @@ function updateUpcomingCall() {
     upcomingTime.textContent = formattedTime;
 }
 
+// Countdown Timer functions
 function startCountdownTimer() {
-    // Pehle wala timer clear karo agar hai toh
+    // Clear previous timer if exists
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
@@ -307,26 +386,26 @@ function startCountdownTimer() {
     window.countdownInterval = setInterval(() => {
         const now = new Date();
         
-        // Har 5 seconds mein reminders update karo (border change ke liye)
+        // Update reminders status every 5 seconds (for border changes)
         if (now.getTime() - lastUpdateTime > 5000) {
             updateRemindersStatus(now);
             lastUpdateTime = now.getTime();
         }
         
-        // SABHI UPCOMING (FUTURE) CALLS FIND KARO
+        // Find all upcoming (future) calls
         const upcomingReminders = reminders.filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
             return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED
         });
         
-        // AGAR KOI UPCOMING CALL NAHI HAI
+        // If no upcoming calls
         if (upcomingReminders.length === 0) {
             countdownElement.textContent = '--:--:--';
             upcomingCall.classList.add('hidden');
             return;
         }
         
-        // SABSE PEHLI UPCOMING CALL (NEXT CALL)
+        // Get the next upcoming call
         const nextReminder = upcomingReminders.sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
             const dateB = new Date(`${b.callDate}T${b.callTime}`);
@@ -336,7 +415,7 @@ function startCountdownTimer() {
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
         const timeDiff = reminderDateTime - now;
         
-        // NORMAL COUNTDOWN DISPLAY
+        // Normal countdown display
         if (timeDiff > 0) {
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
@@ -344,7 +423,7 @@ function startCountdownTimer() {
             
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            // UPDATE UPCOMING CALL DISPLAY
+            // Update upcoming call display
             upcomingCall.classList.remove('hidden');
             const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -353,18 +432,18 @@ function startCountdownTimer() {
             upcomingContact.textContent = nextReminder.contactName;
             upcomingTime.textContent = formattedTime;
             
-            // 5 MINUTES PEHLE NOTIFICATION
+            // 5 minutes before notification
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
                 sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
                 nextReminder.notified = true;
                 saveReminders();
             }
         } else {
-            // AGAR TIME DIFF <= 0 HAI (expired call)
+            // If time diff <= 0 (expired call)
             countdownElement.textContent = '--:--:--';
             upcomingCall.classList.add('hidden');
             
-            // Expired call ke liye notification (sirf ek baar)
+            // Notification for expired call (only once)
             if (!nextReminder.notified) {
                 sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
                 nextReminder.notified = true;
@@ -375,7 +454,6 @@ function startCountdownTimer() {
     }, 1000);
 }
 
-// NEW FUNCTION: Real-time mein reminders ka status update karo (border change ke liye)
 function updateRemindersStatus(currentTime) {
     let needsUpdate = false;
     
@@ -383,27 +461,29 @@ function updateRemindersStatus(currentTime) {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const timeDiff = reminderDateTime - currentTime;
         
-        // Agar call expire ho gaya hai lekin isExpired flag nahi hai
+        // If call expired but isExpired flag is not set
         if (timeDiff <= 0 && !reminder.isExpired) {
             reminder.isExpired = true;
-            reminder.notified = true; // Notification bhej diya hai
+            reminder.notified = true; // Notification already sent
             needsUpdate = true;
         }
     });
     
-    // Agar koi change hua hai toh UI update karo
+    // Update UI if any changes
     if (needsUpdate) {
         saveReminders();
-        renderReminders(); // Yehi line border color change karegi
+        renderReminders(); // This will change border colors
         updateUpcomingCall();
     }
 }
 
+// Notification functions
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
         notificationStatus.textContent = 'Not supported';
         notificationStatus.className = 'text-danger';
         enableNotificationsBtn.style.display = 'none';
+        disableNotificationsBtn.style.display = 'none';
         return;
     }
 
@@ -411,28 +491,38 @@ function checkNotificationPermission() {
         notificationStatus.textContent = 'Enabled';
         notificationStatus.className = 'text-success';
         enableNotificationsBtn.style.display = 'none';
+        disableNotificationsBtn.style.display = 'inline-flex';
     } else if (Notification.permission === 'denied') {
         notificationStatus.textContent = 'Blocked';
         notificationStatus.className = 'text-danger';
         enableNotificationsBtn.style.display = 'none';
+        disableNotificationsBtn.style.display = 'none';
     } else {
         notificationStatus.textContent = 'Click to enable';
         notificationStatus.className = 'text-warning';
         enableNotificationsBtn.style.display = 'inline-flex';
+        disableNotificationsBtn.style.display = 'none';
     }
 }
 
-enableNotificationsBtn.addEventListener('click', () => {
-    Notification.requestPermission().then(permission => {
-        checkNotificationPermission();
-
-        if (permission === 'granted') {
-            showNotification('Notifications Enabled', 'You will now receive call reminders!');
-        } else if (permission === 'denied') {
-            showNotification('Notifications Blocked', 'You have blocked notifications. Please enable them in browser settings.');
-        }
-    });
-});
+// Notification confirmation card function
+function showNotificationCard(title, message, type = 'info') {
+    notificationCardTitle.textContent = title;
+    notificationCardMessage.innerHTML = message;
+    
+    // Style based on type
+    const header = notificationConfirmation.querySelector('.notification-card-header');
+    header.style.background = type === 'success' ? 'var(--success-light)' : 
+                             type === 'error' ? 'var(--danger-light)' : 
+                             type === 'warning' ? 'var(--warning-light)' : 
+                             'var(--primary-light)';
+    header.style.color = type === 'success' ? 'var(--success-dark)' : 
+                        type === 'error' ? 'var(--danger-dark)' : 
+                        type === 'warning' ? 'var(--warning-dark)' : 
+                        'var(--primary-dark)';
+    
+    notificationConfirmation.classList.remove('hidden');
+}
 
 function sendBrowserNotification(title, body) {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
@@ -460,6 +550,7 @@ function sendBrowserNotification(title, body) {
 }
 
 function showNotification(title, message) {
+    // First show the toast notification
     const notificationEl = document.createElement('div');
     notificationEl.className = 'notification-toast';
     notificationEl.innerHTML = `
@@ -483,11 +574,22 @@ function showNotification(title, message) {
 
     document.body.appendChild(notificationEl);
 
+    // If notification is about permission, also show card
+    if (title.includes('Notifications')) {
+        const type = title.includes('Enabled') || title.includes('Success') ? 'success' : 
+                     title.includes('Blocked') || title.includes('Error') ? 'error' : 'warning';
+        showNotificationCard(title, message, type);
+    }
+
     const style = document.createElement('style');
     style.textContent = `
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
     `;
     document.head.appendChild(style);
@@ -502,6 +604,7 @@ function showNotification(title, message) {
     }, 3000);
 }
 
+// Clean up old reminders on page load
 window.addEventListener('load', () => {
     const now = new Date();
     const validReminders = reminders.filter(reminder => {
@@ -513,12 +616,5 @@ window.addEventListener('load', () => {
         reminders = validReminders;
         saveReminders();
         renderReminders();
-    }
-});
-
-// Page unload hone se pehle timer clear karo
-window.addEventListener('beforeunload', () => {
-    if (window.countdownInterval) {
-        clearInterval(window.countdownInterval);
     }
 });
