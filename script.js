@@ -677,20 +677,23 @@ function updateRemindersStatus(currentTime) {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const timeDiff = reminderDateTime - currentTime;
         
+        // If call expired but isExpired flag is not set
         if (timeDiff <= 0 && !reminder.isExpired) {
             reminder.isExpired = true;
-            reminder.notified = true; 
+            reminder.notified = true; // Notification already sent
             needsUpdate = true;
         }
     });
     
+    // Update UI if any changes
     if (needsUpdate) {
         saveReminders();
-        renderReminders();
+        renderReminders(); // This will change border colors
         updateUpcomingCall();
     }
 }
 
+// Clean up old reminders on page load
 window.addEventListener('load', () => {
     const now = new Date();
     const validReminders = reminders.filter(reminder => {
