@@ -1,4 +1,4 @@
-// DOM Elements
+// DOM Elements - same as before
 const reminderForm = document.getElementById('reminderForm');
 const reminderList = document.getElementById('reminderList');
 const reminderCount = document.getElementById('reminderCount');
@@ -28,6 +28,9 @@ const confirmNotificationBtn = document.getElementById('confirmNotification');
 const closeNotificationCardBtn = document.getElementById('closeNotificationCard');
 const disableNotificationsBtn = document.getElementById('disableNotifications');
 
+// YEH NEW VARIABLE ADD KAREN
+const RETRY_ENABLE_KEY = 'callremind_notification_retry';
+
 let reminders = [];
 let reminderToDelete = null;
 let lastUpdateTime = 0; // Track last time reminders were checked
@@ -44,6 +47,9 @@ window.addEventListener('DOMContentLoaded', () => {
     startCountdownTimer();
     
     setupEventListeners();
+    
+    // YEH LINE ADD KAREN - Page load par check karen
+    showRetryNotificationIfBlocked();
 });
 
 // Initialize form with default values
@@ -99,6 +105,67 @@ function setupEventListeners() {
             clearInterval(window.countdownInterval);
         }
     });
+    
+    // YEH NEW EVENT LISTENER ADD KAREN
+    // Jab bhi user page pe click kare, check karen notification status
+    document.addEventListener('click', checkNotificationOnUserAction);
+}
+
+// YEH NEW FUNCTION ADD KAREN - User action par check kare
+function checkNotificationOnUserAction() {
+    // Sirf ek baar check kare, har click par nahi
+    // Notification permission check karen
+    if ('Notification' in window) {
+        const permission = Notification.permission;
+        
+        if (permission === 'granted') {
+            // Agar enabled hai
+            notificationStatus.textContent = 'Enabled';
+            notificationStatus.className = 'text-success';
+            enableNotificationsBtn.style.display = 'none';
+            disableNotificationsBtn.style.display = 'inline-flex';
+        } else if (permission === 'denied') {
+            // Agar blocked hai
+            notificationStatus.textContent = 'Blocked';
+            notificationStatus.className = 'text-danger';
+            enableNotificationsBtn.style.display = 'inline-flex'; // Enable button show karo
+            disableNotificationsBtn.style.display = 'none';
+        } else {
+            // Default state
+            notificationStatus.textContent = 'Click to enable';
+            notificationStatus.className = 'text-warning';
+            enableNotificationsBtn.style.display = 'inline-flex';
+            disableNotificationsBtn.style.display = 'none';
+        }
+    }
+}
+
+// YEH NEW FUNCTION ADD KAREN - Page load par agar notifications blocked hain toh message show kare
+function showRetryNotificationIfBlocked() {
+    if ('Notification' in window) {
+        if (Notification.permission === 'denied') {
+            // Local storage check karen - pehle hi dikhaya hai ya nahi
+            const lastShown = localStorage.getItem(RETRY_ENABLE_KEY);
+            const now = new Date().getTime();
+            
+            // Agar 24 hours se zyada ho gaye ya pehle kabhi nahi dikhaya
+            if (!lastShown || (now - parseInt(lastShown)) > 24 * 60 * 60 * 1000) {
+                // Notification card show karen
+                showNotificationCard(
+                    'Notifications Blocked',
+                    'Notifications are currently blocked. You can enable them by:<br>1. Clicking the lock icon in your address bar<br>2. Changing "Notifications" to "Allow"<br>3. Then clicking the "Enable Notifications" button below',
+                    'warning'
+                );
+                
+                // Enable button show karen
+                enableNotificationsBtn.style.display = 'inline-flex';
+                disableNotificationsBtn.style.display = 'none';
+                
+                // Time save karen
+                localStorage.setItem(RETRY_ENABLE_KEY, now.toString());
+            }
+        }
+    }
 }
 
 // Form submission handler
@@ -130,16 +197,34 @@ function handleFormSubmit(e) {
     contactNameInput.focus();
 }
 
-// Notification permission handlers
+// Notification permission handlers - YEH UPDATE KAREN
 function handleEnableNotifications() {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
             showNotificationCard('Notifications Enabled', 'You will now receive call reminders!', 'success');
             showNotification('Success', 'Notifications have been enabled!');
+            
+            // Enable button hide, disable button show
+            enableNotificationsBtn.style.display = 'none';
+            disableNotificationsBtn.style.display = 'inline-flex';
+            notificationStatus.textContent = 'Enabled';
+            notificationStatus.className = 'text-success';
+            
+            // Retry timer clear karen
+            localStorage.removeItem(RETRY_ENABLE_KEY);
+            
         } else if (permission === 'denied') {
-            showNotificationCard('Notifications Blocked', 'You have blocked notifications. Please enable them in browser settings.', 'error');
+            showNotificationCard('Notifications Blocked', 
+                'You have blocked notifications. To enable them:<br>1. Click on the lock icon in address bar<br>2. Change "Notifications" to "Allow"<br>3. Refresh the page and click "Enable Notifications" again',
+                'error'
+            );
+            
+            // Enable button show rakhen (taaki user dubara try kar sake)
+            enableNotificationsBtn.style.display = 'inline-flex';
+            disableNotificationsBtn.style.display = 'none';
+            notificationStatus.textContent = 'Blocked';
+            notificationStatus.className = 'text-danger';
         }
-        checkNotificationPermission();
     });
 }
 
@@ -165,7 +250,139 @@ function loadReminders() {
     return stored ? JSON.parse(stored) : [];
 }
 
-// Reminder CRUD operations
+// Notification functions - YEH UPDATE KAREN
+function checkNotificationPermission() {
+    if (!('Notification' in window)) {
+        notificationStatus.textContent = 'Not supported';
+        notificationStatus.className = 'text-danger';
+        enableNotificationsBtn.style.display = 'none';
+        disableNotificationsBtn.style.display = 'none';
+        return;
+    }
+
+    const permission = Notification.permission;
+    
+    if (permission === 'granted') {
+        notificationStatus.textContent = 'Enabled';
+        notificationStatus.className = 'text-success';
+        enableNotificationsBtn.style.display = 'none';
+        disableNotificationsBtn.style.display = 'inline-flex';
+    } else if (permission === 'denied') {
+        notificationStatus.textContent = 'Blocked';
+        notificationStatus.className = 'text-danger';
+        // YEH IMPORTANT CHANGE HAI: Blocked hone par bhi enable button show karen
+        enableNotificationsBtn.style.display = 'inline-flex';
+        disableNotificationsBtn.style.display = 'none';
+    } else {
+        notificationStatus.textContent = 'Click to enable';
+        notificationStatus.className = 'text-warning';
+        enableNotificationsBtn.style.display = 'inline-flex';
+        disableNotificationsBtn.style.display = 'none';
+    }
+}
+
+// Baaki sab functions waisa hi rahega (addReminder, deleteReminder, renderReminders, etc.)
+
+// Notification confirmation card function
+function showNotificationCard(title, message, type = 'info') {
+    notificationCardTitle.textContent = title;
+    notificationCardMessage.innerHTML = message;
+    
+    // Style based on type
+    const header = notificationConfirmation.querySelector('.notification-card-header');
+    header.style.background = type === 'success' ? 'var(--success-light)' : 
+                             type === 'error' ? 'var(--danger-light)' : 
+                             type === 'warning' ? 'var(--warning-light)' : 
+                             'var(--primary-light)';
+    header.style.color = type === 'success' ? 'var(--success-dark)' : 
+                        type === 'error' ? 'var(--danger-dark)' : 
+                        type === 'warning' ? 'var(--warning-dark)' : 
+                        'var(--primary-dark)';
+    
+    notificationConfirmation.classList.remove('hidden');
+}
+
+function sendBrowserNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return;
+    }
+
+    try {
+        const notification = new Notification(title, {
+            body: body,
+            icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>',
+            requireInteraction: true
+        });
+
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+
+        setTimeout(() => {
+            notification.close();
+        }, 10000);
+    } catch (error) {
+        console.log('Notification error:', error);
+    }
+}
+
+function showNotification(title, message) {
+    // First show the toast notification
+    const notificationEl = document.createElement('div');
+    notificationEl.className = 'notification-toast';
+    notificationEl.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            max-width: 300px;
+        ">
+            <strong>${title}</strong>
+            <p style="margin: 5px 0 0; font-size: 0.9rem;">${message}</p>
+        </div>
+    `;
+
+    document.body.appendChild(notificationEl);
+
+    // If notification is about permission, also show card
+    if (title.includes('Notifications')) {
+        const type = title.includes('Enabled') || title.includes('Success') ? 'success' : 
+                     title.includes('Blocked') || title.includes('Error') ? 'error' : 'warning';
+        showNotificationCard(title, message, type);
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    setTimeout(() => {
+        notificationEl.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notificationEl.parentNode) {
+                document.body.removeChild(notificationEl);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Reminder CRUD operations (same as before)
 function addReminder(reminder) {
     const newReminder = {
         id: Date.now(),
@@ -254,7 +471,7 @@ function resetForm() {
         nextHour.getMinutes().toString().padStart(2, '0');
 }
 
-// UI Rendering functions
+// UI Rendering functions (same as before)
 function renderReminders() {
     reminders.sort((a, b) => {
         const dateA = new Date(`${a.callDate}T${a.callTime}`);
@@ -375,7 +592,7 @@ function updateUpcomingCall() {
     upcomingTime.textContent = formattedTime;
 }
 
-// Countdown Timer functions
+// Countdown Timer functions (same as before)
 function startCountdownTimer() {
     // Clear previous timer if exists
     if (window.countdownInterval) {
@@ -460,188 +677,20 @@ function updateRemindersStatus(currentTime) {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const timeDiff = reminderDateTime - currentTime;
         
-        // If call expired but isExpired flag is not set
         if (timeDiff <= 0 && !reminder.isExpired) {
             reminder.isExpired = true;
-            reminder.notified = true; // Notification already sent
+            reminder.notified = true; 
             needsUpdate = true;
         }
     });
     
-    // Update UI if any changes
     if (needsUpdate) {
         saveReminders();
-        renderReminders(); // This will change border colors
+        renderReminders();
         updateUpcomingCall();
     }
 }
 
-// Notification functions - YAHAN MAIN CHANGE KAR RAHA HOON
-function checkNotificationPermission() {
-    if (!('Notification' in window)) {
-        notificationStatus.textContent = 'Not supported';
-        notificationStatus.className = 'text-danger';
-        enableNotificationsBtn.style.display = 'none';
-        disableNotificationsBtn.style.display = 'none';
-        return;
-    }
-
-    if (Notification.permission === 'granted') {
-        notificationStatus.textContent = 'Enabled';
-        notificationStatus.className = 'text-success';
-        enableNotificationsBtn.style.display = 'none';
-        disableNotificationsBtn.style.display = 'inline-flex';
-    } else if (Notification.permission === 'denied') {
-        notificationStatus.textContent = 'Blocked';
-        notificationStatus.className = 'text-danger';
-        enableNotificationsBtn.style.display = 'none';
-        disableNotificationsBtn.style.display = 'none';
-    } else {
-        // Jab user ne abhi tak permission nahi diya hai (default state)
-        notificationStatus.textContent = 'Click to enable';
-        notificationStatus.className = 'text-warning';
-        enableNotificationsBtn.style.display = 'inline-flex';
-        disableNotificationsBtn.style.display = 'none';
-    }
-}
-
-// Yeh new function add karein: Manual notification permission check karne ke liye
-function checkAndReEnableNotifications() {
-    // Har 30 seconds mein check karein agar notifications disabled hain
-    setInterval(() => {
-        if ('Notification' in window) {
-            // Agar permission "denied" hai (user ne block kar diya hai)
-            if (Notification.permission === 'denied') {
-                notificationStatus.textContent = 'Blocked';
-                notificationStatus.className = 'text-danger';
-                enableNotificationsBtn.style.display = 'inline-flex'; // Enable button show karo
-                disableNotificationsBtn.style.display = 'none';
-                
-                // User ko inform karo ki notifications block hain
-                showNotificationCard(
-                    'Notifications Blocked',
-                    'Notifications are currently blocked. Click "Enable Notifications" to enable them again.',
-                    'warning'
-                );
-            }
-            // Agar permission "default" hai (user ne abhi tak decision nahi liya)
-            else if (Notification.permission === 'default') {
-                notificationStatus.textContent = 'Click to enable';
-                notificationStatus.className = 'text-warning';
-                enableNotificationsBtn.style.display = 'inline-flex';
-                disableNotificationsBtn.style.display = 'none';
-            }
-            // Agar permission "granted" hai
-            else if (Notification.permission === 'granted') {
-                notificationStatus.textContent = 'Enabled';
-                notificationStatus.className = 'text-success';
-                enableNotificationsBtn.style.display = 'none';
-                disableNotificationsBtn.style.display = 'inline-flex';
-            }
-        }
-    }, 30000); // 30 seconds
-}
-
-// Notification confirmation card function
-function showNotificationCard(title, message, type = 'info') {
-    notificationCardTitle.textContent = title;
-    notificationCardMessage.innerHTML = message;
-    
-    // Style based on type
-    const header = notificationConfirmation.querySelector('.notification-card-header');
-    header.style.background = type === 'success' ? 'var(--success-light)' : 
-                             type === 'error' ? 'var(--danger-light)' : 
-                             type === 'warning' ? 'var(--warning-light)' : 
-                             'var(--primary-light)';
-    header.style.color = type === 'success' ? 'var(--success-dark)' : 
-                        type === 'error' ? 'var(--danger-dark)' : 
-                        type === 'warning' ? 'var(--warning-dark)' : 
-                        'var(--primary-dark)';
-    
-    notificationConfirmation.classList.remove('hidden');
-}
-
-function sendBrowserNotification(title, body) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
-        return;
-    }
-
-    try {
-        const notification = new Notification(title, {
-            body: body,
-            icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>',
-            requireInteraction: true
-        });
-
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
-
-        setTimeout(() => {
-            notification.close();
-        }, 10000);
-    } catch (error) {
-        console.log('Notification error:', error);
-    }
-}
-
-function showNotification(title, message) {
-    // First show the toast notification
-    const notificationEl = document.createElement('div');
-    notificationEl.className = 'notification-toast';
-    notificationEl.innerHTML = `
-        <div style="
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--primary);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: var(--box-shadow);
-            z-index: 1000;
-            animation: slideInRight 0.3s ease;
-            max-width: 300px;
-        ">
-            <strong>${title}</strong>
-            <p style="margin: 5px 0 0; font-size: 0.9rem;">${message}</p>
-        </div>
-    `;
-
-    document.body.appendChild(notificationEl);
-
-    // If notification is about permission, also show card
-    if (title.includes('Notifications')) {
-        const type = title.includes('Enabled') || title.includes('Success') ? 'success' : 
-                     title.includes('Blocked') || title.includes('Error') ? 'error' : 'warning';
-        showNotificationCard(title, message, type);
-    }
-
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-
-    setTimeout(() => {
-        notificationEl.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => {
-            if (notificationEl.parentNode) {
-                document.body.removeChild(notificationEl);
-            }
-        }, 300);
-    }, 3000);
-}
-
-// Clean up old reminders on page load
 window.addEventListener('load', () => {
     const now = new Date();
     const validReminders = reminders.filter(reminder => {
@@ -654,14 +703,4 @@ window.addEventListener('load', () => {
         saveReminders();
         renderReminders();
     }
-});
-
-// Notification permission ko regularly check karne ka function call karein
-// Yeh line aapko initialize function mein add karni hai
-// Aap ise DOMContentLoaded event ke andar call kar sakte hain
-
-// Check notification permission aur regular monitoring start karein
-window.addEventListener('DOMContentLoaded', () => {
-    // Pehle wale initialization code...
-    checkAndReEnableNotifications(); // Yeh line add karein
 });
