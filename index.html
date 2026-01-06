@@ -113,6 +113,43 @@
         </div>
     </div>
 </div>
+<!-- Existing code ke saath yeh change karein -->
+<div class="notification-section">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0; font-size: 1.1rem;">
+            <i class="fas fa-bell"></i> Notifications
+        </h3>
+        <span id="notificationStatus" class="notification-status text-warning">
+            Click to enable
+        </span>
+    </div>
+    
+    <div style="display: flex; gap: 0.5rem;">
+        <button id="enableNotifications" class="btn btn-primary">
+            <i class="fas fa-bell"></i> Enable Notifications
+        </button>
+        
+        <!-- New Disable Notifications Button -->
+        <button id="disableNotifications" class="btn btn-outline-danger" style="display: none;">
+            <i class="fas fa-bell-slash"></i> Disable
+        </button>
+    </div>
+    
+    <!-- Notification Confirmation Card -->
+    <div id="notificationConfirmation" class="notification-card hidden">
+        <div class="notification-card-header">
+            <i class="fas fa-info-circle"></i>
+            <span id="notificationCardTitle">Notifications Enabled</span>
+            <button class="close-card-btn" id="closeNotificationCard">&times;</button>
+        </div>
+        <div class="notification-card-body">
+            <p id="notificationCardMessage">You will now receive call reminders!</p>
+        </div>
+        <div class="notification-card-footer">
+            <button id="confirmNotification" class="btn btn-primary btn-sm">OK</button>
+        </div>
+    </div>
+</div>
 
     <script src="script.js"></script>
 </body>
