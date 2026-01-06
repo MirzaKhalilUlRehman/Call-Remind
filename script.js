@@ -521,4 +521,8 @@ window.addEventListener('beforeunload', () => {
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 4f11d5978562a544eca5c4d380676979e8c47b8e
