@@ -1,4 +1,4 @@
-// DOM Elements - same as before
+// DOM Elements
 const reminderForm = document.getElementById('reminderForm');
 const reminderList = document.getElementById('reminderList');
 const reminderCount = document.getElementById('reminderCount');
@@ -20,7 +20,7 @@ const cancelDeleteBtn = document.getElementById('cancelDelete');
 const confirmDeleteBtn = document.getElementById('confirmDelete');
 const reminderDetails = document.getElementById('reminderDetails');
 
-// New elements for notification confirmation
+// Notification elements
 const notificationConfirmation = document.getElementById('notificationConfirmation');
 const notificationCardTitle = document.getElementById('notificationCardTitle');
 const notificationCardMessage = document.getElementById('notificationCardMessage');
@@ -28,12 +28,23 @@ const confirmNotificationBtn = document.getElementById('confirmNotification');
 const closeNotificationCardBtn = document.getElementById('closeNotificationCard');
 const disableNotificationsBtn = document.getElementById('disableNotifications');
 
-// YEH NEW VARIABLE ADD KAREN
-const RETRY_ENABLE_KEY = 'callremind_notification_retry';
+// PWA elements
+const installPWA = document.getElementById('installPWA');
+const pwaInstructions = document.getElementById('pwaInstructions');
+const closePWAInstructions = document.getElementById('closePWAInstructions');
 
+// Constants
+const RETRY_ENABLE_KEY = 'callremind_notification_retry';
+const STORAGE_KEY = 'callremind_reminders';
+const PWA_INSTRUCTIONS_KEY = 'callremind_pwa_instructions';
+
+// Variables
 let reminders = [];
 let reminderToDelete = null;
-let lastUpdateTime = 0; // Track last time reminders were checked
+let lastUpdateTime = 0;
+let swRegistration = null;
+let isPWAInstalled = false;
+let deferredPrompt = null;
 
 // Initialize the application
 window.addEventListener('DOMContentLoaded', () => {
@@ -47,9 +58,14 @@ window.addEventListener('DOMContentLoaded', () => {
     startCountdownTimer();
     
     setupEventListeners();
-    
-    // YEH LINE ADD KAREN - Page load par check karen
     showRetryNotificationIfBlocked();
+    
+    // Initialize Service Worker and PWA
+    initServiceWorker();
+    checkPWAInstallation();
+    
+    // Show PWA instructions if not shown before
+    showPWAInstructionsIfNeeded();
 });
 
 // Initialize form with default values
@@ -99,6 +115,25 @@ function setupEventListeners() {
         }
     });
     
+    // PWA events
+    if (installPWA) {
+        installPWA.addEventListener('click', handlePWAInstall);
+    }
+    
+    if (closePWAInstructions) {
+        closePWAInstructions.addEventListener('click', () => {
+            pwaInstructions.classList.add('hidden');
+            localStorage.setItem(PWA_INSTRUCTIONS_KEY, 'shown');
+        });
+    }
+    
+    pwaInstructions.addEventListener('click', (e) => {
+        if (e.target === pwaInstructions) {
+            pwaInstructions.classList.add('hidden');
+            localStorage.setItem(PWA_INSTRUCTIONS_KEY, 'shown');
+        }
+    });
+    
     // Clear timer on page unload
     window.addEventListener('beforeunload', () => {
         if (window.countdownInterval) {
@@ -106,32 +141,143 @@ function setupEventListeners() {
         }
     });
     
-    // YEH NEW EVENT LISTENER ADD KAREN
-    // Jab bhi user page pe click kare, check karen notification status
+    // Check notification status on user action
     document.addEventListener('click', checkNotificationOnUserAction);
+    
+    // PWA installation event
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installPWA) {
+            installPWA.style.display = 'inline-flex';
+        }
+        
+        // Show PWA instructions
+        if (!localStorage.getItem(PWA_INSTRUCTIONS_KEY)) {
+            setTimeout(() => {
+                pwaInstructions.classList.remove('hidden');
+            }, 2000);
+        }
+    });
+    
+    // Detect when PWA is installed
+    window.addEventListener('appinstalled', () => {
+        isPWAInstalled = true;
+        console.log('PWA installed successfully');
+        if (installPWA) {
+            installPWA.style.display = 'none';
+        }
+        showNotification('Success', 'App installed! You will now receive background notifications.');
+    });
 }
 
-// YEH NEW FUNCTION ADD KAREN - User action par check kare
+// Initialize Service Worker
+async function initServiceWorker() {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+            swRegistration = await navigator.serviceWorker.register('service-worker.js');
+            console.log('Service Worker registered:', swRegistration);
+            
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', event => {
+                console.log('Message from service worker:', event.data);
+                handleServiceWorkerMessage(event.data);
+            });
+            
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+        }
+    }
+}
+
+// Handle PWA installation
+async function handlePWAInstall() {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+        console.log('User accepted PWA installation');
+        isPWAInstalled = true;
+    } else {
+        console.log('User declined PWA installation');
+    }
+    
+    deferredPrompt = null;
+    if (installPWA) {
+        installPWA.style.display = 'none';
+    }
+}
+
+// Show PWA instructions if needed
+function showPWAInstructionsIfNeeded() {
+    if (!localStorage.getItem(PWA_INSTRUCTIONS_KEY) && 
+        window.matchMedia('(display-mode: browser)').matches &&
+        'serviceWorker' in navigator) {
+        setTimeout(() => {
+            pwaInstructions.classList.remove('hidden');
+        }, 3000);
+    }
+}
+
+// Check if PWA is installed
+function checkPWAInstallation() {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        isPWAInstalled = true;
+        console.log('Running as PWA');
+        if (installPWA) {
+            installPWA.style.display = 'none';
+        }
+    }
+}
+
+// Handle messages from service worker
+function handleServiceWorkerMessage(data) {
+    if (data.action === 'mark-done' && data.reminderId) {
+        markAsCompleted(data.reminderId);
+    } else if (data.action === 'snooze' && data.reminderId) {
+        snoozeReminder(data.reminderId, data.minutes || 5);
+    }
+}
+
+// Snooze reminder
+function snoozeReminder(id, minutes) {
+    const reminder = reminders.find(r => r.id === id);
+    if (reminder) {
+        const originalDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+        const newDateTime = new Date(originalDateTime.getTime() + (minutes * 60 * 1000));
+        
+        reminder.callDate = newDateTime.toISOString().split('T')[0];
+        reminder.callTime = newDateTime.getHours().toString().padStart(2, '0') + ':' + 
+                           newDateTime.getMinutes().toString().padStart(2, '0');
+        reminder.notified = false;
+        reminder.isExpired = false;
+        
+        saveReminders();
+        renderReminders();
+        updateUpcomingCall();
+        
+        showNotification('Reminder Snoozed', `Reminder for ${reminder.contactName} snoozed for ${minutes} minutes`);
+    }
+}
+
+// Check notification status on user action
 function checkNotificationOnUserAction() {
-    // Sirf ek baar check kare, har click par nahi
-    // Notification permission check karen
     if ('Notification' in window) {
         const permission = Notification.permission;
         
         if (permission === 'granted') {
-            // Agar enabled hai
             notificationStatus.textContent = 'Enabled';
             notificationStatus.className = 'text-success';
             enableNotificationsBtn.style.display = 'none';
             disableNotificationsBtn.style.display = 'inline-flex';
         } else if (permission === 'denied') {
-            // Agar blocked hai
             notificationStatus.textContent = 'Blocked';
             notificationStatus.className = 'text-danger';
-            enableNotificationsBtn.style.display = 'inline-flex'; // Enable button show karo
+            enableNotificationsBtn.style.display = 'inline-flex';
             disableNotificationsBtn.style.display = 'none';
         } else {
-            // Default state
             notificationStatus.textContent = 'Click to enable';
             notificationStatus.className = 'text-warning';
             enableNotificationsBtn.style.display = 'inline-flex';
@@ -140,28 +286,22 @@ function checkNotificationOnUserAction() {
     }
 }
 
-// YEH NEW FUNCTION ADD KAREN - Page load par agar notifications blocked hain toh message show kare
+// Show retry notification if blocked
 function showRetryNotificationIfBlocked() {
     if ('Notification' in window) {
         if (Notification.permission === 'denied') {
-            // Local storage check karen - pehle hi dikhaya hai ya nahi
             const lastShown = localStorage.getItem(RETRY_ENABLE_KEY);
             const now = new Date().getTime();
             
-            // Agar 24 hours se zyada ho gaye ya pehle kabhi nahi dikhaya
             if (!lastShown || (now - parseInt(lastShown)) > 24 * 60 * 60 * 1000) {
-                // Notification card show karen
                 showNotificationCard(
                     'Notifications Blocked',
                     'Notifications are currently blocked. You can enable them by:<br>1. Clicking the lock icon in your address bar<br>2. Changing "Notifications" to "Allow"<br>3. Then clicking the "Enable Notifications" button below',
                     'warning'
                 );
                 
-                // Enable button show karen
                 enableNotificationsBtn.style.display = 'inline-flex';
                 disableNotificationsBtn.style.display = 'none';
-                
-                // Time save karen
                 localStorage.setItem(RETRY_ENABLE_KEY, now.toString());
             }
         }
@@ -197,20 +337,18 @@ function handleFormSubmit(e) {
     contactNameInput.focus();
 }
 
-// Notification permission handlers - YEH UPDATE KAREN
+// Notification permission handlers
 function handleEnableNotifications() {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
             showNotificationCard('Notifications Enabled', 'You will now receive call reminders!', 'success');
             showNotification('Success', 'Notifications have been enabled!');
             
-            // Enable button hide, disable button show
             enableNotificationsBtn.style.display = 'none';
             disableNotificationsBtn.style.display = 'inline-flex';
             notificationStatus.textContent = 'Enabled';
             notificationStatus.className = 'text-success';
             
-            // Retry timer clear karen
             localStorage.removeItem(RETRY_ENABLE_KEY);
             
         } else if (permission === 'denied') {
@@ -219,7 +357,6 @@ function handleEnableNotifications() {
                 'error'
             );
             
-            // Enable button show rakhen (taaki user dubara try kar sake)
             enableNotificationsBtn.style.display = 'inline-flex';
             disableNotificationsBtn.style.display = 'none';
             notificationStatus.textContent = 'Blocked';
@@ -239,8 +376,6 @@ function handleDisableNotifications() {
 }
 
 // Local Storage functions
-const STORAGE_KEY = 'callremind_reminders';
-
 function saveReminders() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
 }
@@ -250,7 +385,7 @@ function loadReminders() {
     return stored ? JSON.parse(stored) : [];
 }
 
-// Notification functions - YEH UPDATE KAREN
+// Check notification permission
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
         notificationStatus.textContent = 'Not supported';
@@ -270,7 +405,6 @@ function checkNotificationPermission() {
     } else if (permission === 'denied') {
         notificationStatus.textContent = 'Blocked';
         notificationStatus.className = 'text-danger';
-        // YEH IMPORTANT CHANGE HAI: Blocked hone par bhi enable button show karen
         enableNotificationsBtn.style.display = 'inline-flex';
         disableNotificationsBtn.style.display = 'none';
     } else {
@@ -281,14 +415,11 @@ function checkNotificationPermission() {
     }
 }
 
-// Baaki sab functions waisa hi rahega (addReminder, deleteReminder, renderReminders, etc.)
-
-// Notification confirmation card function
+// Notification confirmation card
 function showNotificationCard(title, message, type = 'info') {
     notificationCardTitle.textContent = title;
     notificationCardMessage.innerHTML = message;
     
-    // Style based on type
     const header = notificationConfirmation.querySelector('.notification-card-header');
     header.style.background = type === 'success' ? 'var(--success-light)' : 
                              type === 'error' ? 'var(--danger-light)' : 
@@ -302,33 +433,51 @@ function showNotificationCard(title, message, type = 'info') {
     notificationConfirmation.classList.remove('hidden');
 }
 
-function sendBrowserNotification(title, body) {
+// Send browser notification
+function sendBrowserNotification(title, body, reminderId = null) {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
         return;
     }
 
     try {
-        const notification = new Notification(title, {
-            body: body,
-            icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>',
-            requireInteraction: true
-        });
+        // Try to use service worker if available and installed as PWA
+        if (swRegistration && isPWAInstalled) {
+            swRegistration.showNotification(title, {
+                body: body,
+                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                badge: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                tag: `reminder-${reminderId || Date.now()}`,
+                renotify: true,
+                requireInteraction: true,
+                data: {
+                    url: window.location.href,
+                    reminderId: reminderId
+                }
+            });
+        } else {
+            // Fallback to regular notifications
+            const notification = new Notification(title, {
+                body: body,
+                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                requireInteraction: true
+            });
 
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
 
-        setTimeout(() => {
-            notification.close();
-        }, 10000);
+            setTimeout(() => {
+                notification.close();
+            }, 10000);
+        }
     } catch (error) {
         console.log('Notification error:', error);
     }
 }
 
+// Show notification toast
 function showNotification(title, message) {
-    // First show the toast notification
     const notificationEl = document.createElement('div');
     notificationEl.className = 'notification-toast';
     notificationEl.innerHTML = `
@@ -352,7 +501,6 @@ function showNotification(title, message) {
 
     document.body.appendChild(notificationEl);
 
-    // If notification is about permission, also show card
     if (title.includes('Notifications')) {
         const type = title.includes('Enabled') || title.includes('Success') ? 'success' : 
                      title.includes('Blocked') || title.includes('Error') ? 'error' : 'warning';
@@ -382,7 +530,7 @@ function showNotification(title, message) {
     }, 3000);
 }
 
-// Reminder CRUD operations (same as before)
+// Reminder CRUD operations
 function addReminder(reminder) {
     const newReminder = {
         id: Date.now(),
@@ -471,7 +619,7 @@ function resetForm() {
         nextHour.getMinutes().toString().padStart(2, '0');
 }
 
-// UI Rendering functions (same as before)
+// UI Rendering functions
 function renderReminders() {
     reminders.sort((a, b) => {
         const dateA = new Date(`${a.callDate}T${a.callTime}`);
@@ -564,11 +712,10 @@ function updateUpcomingCall() {
 
     const now = new Date();
     
-    // Only show upcoming (future) calls
     const nextReminder = reminders
         .filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED CALLS
+            return reminderDateTime > now && !r.isExpired;
         })
         .sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
@@ -592,9 +739,8 @@ function updateUpcomingCall() {
     upcomingTime.textContent = formattedTime;
 }
 
-// Countdown Timer functions (same as before)
+// Countdown Timer functions
 function startCountdownTimer() {
-    // Clear previous timer if exists
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
@@ -602,26 +748,22 @@ function startCountdownTimer() {
     window.countdownInterval = setInterval(() => {
         const now = new Date();
         
-        // Update reminders status every 5 seconds (for border changes)
         if (now.getTime() - lastUpdateTime > 5000) {
             updateRemindersStatus(now);
             lastUpdateTime = now.getTime();
         }
         
-        // Find all upcoming (future) calls
         const upcomingReminders = reminders.filter(r => {
             const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-            return reminderDateTime > now && !r.isExpired; // ONLY FUTURE & NOT EXPIRED
+            return reminderDateTime > now && !r.isExpired;
         });
         
-        // If no upcoming calls
         if (upcomingReminders.length === 0) {
             countdownElement.textContent = '--:--:--';
             upcomingCall.classList.add('hidden');
             return;
         }
         
-        // Get the next upcoming call
         const nextReminder = upcomingReminders.sort((a, b) => {
             const dateA = new Date(`${a.callDate}T${a.callTime}`);
             const dateB = new Date(`${b.callDate}T${b.callTime}`);
@@ -631,21 +773,18 @@ function startCountdownTimer() {
         const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
         const timeDiff = reminderDateTime - now;
         
-        // Normal countdown display
         if (timeDiff > 0) {
             const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             
-            // Display format: if days > 0, show "Xd HH:MM:SS", otherwise show "HH:MM:SS"
             if (days > 0) {
                 countdownElement.textContent = `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             } else {
                 countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
             
-            // Update upcoming call display
             upcomingCall.classList.remove('hidden');
             const formattedTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`).toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -654,20 +793,17 @@ function startCountdownTimer() {
             upcomingContact.textContent = nextReminder.contactName;
             upcomingTime.textContent = formattedTime;
             
-            // 5 minutes before notification
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
-                sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
+                sendBrowserNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`, nextReminder.id);
                 nextReminder.notified = true;
                 saveReminders();
             }
         } else {
-            // If time diff <= 0 (expired call)
             countdownElement.textContent = '--:--:--';
             upcomingCall.classList.add('hidden');
             
-            // Notification for expired call (only once)
             if (!nextReminder.notified) {
-                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`);
+                sendBrowserNotification('Time to Call!', `It's time to call ${nextReminder.contactName}!`, nextReminder.id);
                 nextReminder.notified = true;
                 nextReminder.isExpired = true;
                 saveReminders();
@@ -683,18 +819,16 @@ function updateRemindersStatus(currentTime) {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const timeDiff = reminderDateTime - currentTime;
         
-        // If call expired but isExpired flag is not set
         if (timeDiff <= 0 && !reminder.isExpired) {
             reminder.isExpired = true;
-            reminder.notified = true; // Notification already sent
+            reminder.notified = true;
             needsUpdate = true;
         }
     });
     
-    // Update UI if any changes
     if (needsUpdate) {
         saveReminders();
-        renderReminders(); // This will change border colors
+        renderReminders();
         updateUpcomingCall();
     }
 }
