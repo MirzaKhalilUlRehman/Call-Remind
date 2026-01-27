@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
     
     <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
@@ -98,13 +98,6 @@
                         </span>
                     </div>
                     
-                    <div class="notification-info" style="margin-bottom: 15px; padding: 10px; background: var(--light-gray); border-radius: 6px; font-size: 0.9rem;">
-                        <p style="margin: 0;">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>For background notifications (when Chrome is closed):</strong> Install the app
-                        </p>
-                    </div>
-                    
                     <div class="notification-buttons">
                         <button id="enableNotifications" class="btn btn-primary">
                             <i class="fas fa-bell"></i> Enable Notifications
@@ -114,10 +107,18 @@
                             <i class="fas fa-bell-slash"></i> Disable
                         </button>
                         
-                        <!-- Install PWA Button - WILL TRIGGER AUTO INSTALLATION -->
-                        <button id="installPWA" class="btn btn-success" style="display: none;">
-                            <i class="fas fa-download"></i> Install App for Background
+                        <!-- Install App Button - Will trigger automatic installation -->
+                        <button id="installAppBtn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-download"></i> Download App for Background
                         </button>
+                    </div>
+                    
+                    <div class="app-install-info" style="margin-top: 15px; padding: 12px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #4361ee;">
+                        <p style="margin: 0; font-size: 0.9rem; color: #333;">
+                            <i class="fas fa-info-circle" style="color: #4361ee;"></i> 
+                            <strong>For background notifications (when Chrome is closed):</strong> 
+                            Click "Download App" above to install the app on your device.
+                        </p>
                     </div>
                     
                     <!-- Notification Confirmation Card -->
@@ -140,9 +141,6 @@
 
         <footer class="footer">
             <p>callremind &copy; <span id="currentYear"></span> | Built with <i class="fas fa-heart"></i> | Coded by KHALIL</p>
-            <p class="footer-note" style="font-size: 0.9rem; margin-top: 10px; color: var(--gray);">
-                <i class="fas fa-mobile-alt"></i> Install app for background notifications when Chrome is closed
-            </p>
         </footer>
     </div>
     
