@@ -123,7 +123,7 @@ function setupEventListeners() {
         // Show install button
         if (installAppBtn && !isAppInstalled) {
             installAppBtn.style.display = 'inline-flex';
-            installAppBtn.innerHTML = '<i class="fas fa-download"></i> Download App Now';
+            installAppBtn.innerHTML = '<i class="fas fa-download"></i> Install App';
         }
     });
     
@@ -182,7 +182,7 @@ async function installApp() {
     // Show loading state
     if (installAppBtn) {
         const originalText = installAppBtn.innerHTML;
-        installAppBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+        installAppBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
         installAppBtn.disabled = true;
     }
     
@@ -209,7 +209,7 @@ async function installApp() {
     } finally {
         // Restore button
         if (installAppBtn && !isAppInstalled) {
-            installAppBtn.innerHTML = '<i class="fas fa-download"></i> Download App Now';
+            installAppBtn.innerHTML = '<i class="fas fa-download"></i> Install App';
             installAppBtn.disabled = false;
         }
     }
