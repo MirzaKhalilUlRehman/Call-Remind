@@ -1,10 +1,9 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Never miss important calls - Get reminders even when Chrome is closed",
+  "description": "Never miss important calls",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#4361ee",
-  "theme_color": "#4361ee",
-  "icons": []
+  "background_color": "#ffffff",
+  "theme_color": "#4361ee"
 }
