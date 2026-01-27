@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4361ee">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="CallRemind">
 </head>
 <body>
     <div class="container">
@@ -98,6 +106,11 @@
                         <button id="disableNotifications" class="btn btn-outline-danger" style="display: none;">
                             <i class="fas fa-bell-slash"></i> Disable
                         </button>
+                        
+                        <!-- Install PWA Button -->
+                        <button id="installPWA" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-download"></i> Install App
+                        </button>
                     </div>
                     
                     <!-- Notification Confirmation Card -->
@@ -114,12 +127,32 @@
                             <button id="confirmNotification" class="btn btn-primary btn-sm">OK</button>
                         </div>
                     </div>
+                    
+                    <!-- PWA Instructions Card -->
+                    <div id="pwaInstructions" class="notification-card hidden">
+                        <div class="notification-card-header" style="background: var(--success-light); color: var(--success-dark);">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Install App for Background Notifications</span>
+                            <button class="close-card-btn" id="closePWAInstructions">&times;</button>
+                        </div>
+                        <div class="notification-card-body">
+                            <p><strong>For background notifications (when browser is closed):</strong></p>
+                            <ol style="margin-left: 20px; margin-top: 10px;">
+                                <li>Click "Install App" button above</li>
+                                <li>Or use Chrome menu → "Install callremind"</li>
+                                <li>Open installed app for background reminders</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
 
         <footer class="footer">
             <p>callremind &copy; <span id="currentYear"></span> | Built with <i class="fas fa-heart"></i> | Coded by KHALIL</p>
+            <p class="footer-note" style="font-size: 0.9rem; margin-top: 10px; color: var(--gray);">
+                <i class="fas fa-info-circle"></i> Install app for background notifications
+            </p>
         </footer>
     </div>
     
