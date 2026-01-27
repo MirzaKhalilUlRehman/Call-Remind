@@ -1,12 +1,17 @@
 {
     "name": "CallRemind",
     "short_name": "CallRemind",
-    "description": "Never miss important calls with smart reminders",
+    "description": "Never miss important calls - Get reminders even when Chrome is closed",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4361ee",
-    "orientation": "portrait-primary",
+    "orientation": "portrait",
+    "scope": "/",
+    "categories": [
+        "productivity",
+        "utilities"
+    ],
     "icons": [
         {
             "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png",
@@ -43,6 +48,20 @@
             "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/512/1f4de.png",
             "sizes": "512x512",
             "type": "image/png"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "https://via.placeholder.com/540x720/4361ee/ffffff?text=CallRemind+App",
+            "sizes": "540x720",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "https://via.placeholder.com/720x540/4361ee/ffffff?text=CallRemind+App",
+            "sizes": "720x540",
+            "type": "image/png",
+            "form_factor": "wide"
         }
     ]
 }
