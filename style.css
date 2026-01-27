@@ -237,6 +237,16 @@ body {
     color: white;
 }
 
+.btn-success {
+    background-color: var(--success-dark);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #0098d1;
+    transform: translateY(-2px);
+}
+
 .btn-sm {
     padding: 8px 16px;
     font-size: 0.9rem;
@@ -470,6 +480,7 @@ body {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
 /* Notification Card */
