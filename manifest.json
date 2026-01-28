@@ -1,7 +1,7 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Never miss important calls with CallRemind",
+  "description": "Never miss important calls with background notifications",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#4361ee",
@@ -36,6 +36,15 @@
       "purpose": "any maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "sizes": "800x600",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "CallRemind Dashboard"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Add New Reminder",
@@ -46,15 +55,6 @@
         "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/96/1f4de.png",
         "sizes": "96x96"
       }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "sizes": "800x600",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "CallRemind Dashboard"
     }
   ]
 }
