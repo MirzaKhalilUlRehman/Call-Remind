@@ -84,15 +84,8 @@ body {
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .main-content {
@@ -207,8 +200,21 @@ body {
 }
 
 .btn-success {
-    background-color: var(--success);
+    background-color: #28a745;
     color: white;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-warning {
+    background-color: var(--warning);
+    color: white;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.btn-success:hover {
+    background-color: #218838;
 }
 
 .section-header {
@@ -281,17 +287,9 @@ body {
 }
 
 @keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.4);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(247, 37, 133, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(247, 37, 133, 0);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
 }
 
 .reminder-item.expired {
@@ -436,24 +434,27 @@ body {
 
 .notification-buttons {
     display: flex;
+    flex-direction: column;
     gap: 10px;
     margin-bottom: 15px;
-    flex-wrap: wrap;
 }
 
-.text-success {
-    color: #00a8e8;
-    background-color: #d1f5ff;
+.text-success { 
+    color: #28a745; 
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
 }
 
-.text-danger {
-    color: #d90429;
-    background-color: #ffe6ef;
+.text-danger { 
+    color: #dc3545; 
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
 }
 
-.text-warning {
-    color: #e85d04;
-    background-color: #fff3e0;
+.text-warning { 
+    color: #ffc107; 
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
 }
 
 .hidden {
@@ -493,15 +494,8 @@ body {
 }
 
 @keyframes slideIn {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-header {
@@ -562,97 +556,6 @@ body {
     gap: 15px;
 }
 
-@media (max-width: 768px) {
-    .logo h1 {
-        font-size: 2.5rem;
-    }
-
-    .logo {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .countdown {
-        font-size: 1.4rem;
-        padding: 8px 16px;
-    }
-
-    .notification-buttons {
-        flex-direction: column;
-    }
-
-    .notification-buttons .btn {
-        width: 100%;
-    }
-
-    .card {
-        padding: 20px;
-    }
-
-    .modal-content {
-        width: 95%;
-        padding: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    body {
-        padding: 10px;
-    }
-
-    .header {
-        padding: 10px;
-    }
-
-    .logo h1 {
-        font-size: 2rem;
-    }
-
-    .form-section h2,
-    .section-header h2 {
-        font-size: 1.5rem;
-    }
-
-    .reminder-contact {
-        font-size: 1.1rem;
-    }
-}
-/* Add these to your existing CSS file */
-
-.install-info {
-    margin-top: 10px;
-    padding: 10px;
-    background: #e8f4ff;
-    border-radius: 6px;
-    border: 1px solid #b3d9ff;
-    font-size: 0.85rem;
-    color: #0066cc;
-}
-
-.install-info p {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.pwa-status {
-    margin-top: 10px;
-    padding: 10px;
-    background: #d4edda;
-    border-radius: 6px;
-    border: 1px solid #c3e6cb;
-    font-size: 0.85rem;
-    color: #155724;
-}
-
-.pwa-status p {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 /* Toast Notification */
 .toast {
     position: fixed;
@@ -660,14 +563,15 @@ body {
     right: 20px;
     background: #333;
     color: white;
-    padding: 12px 24px;
+    padding: 15px 25px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 10000;
     font-weight: 500;
     min-width: 250px;
-    max-width: 300px;
+    max-width: 350px;
     animation: slideInRight 0.3s ease;
+    font-size: 0.95rem;
 }
 
 @keyframes slideInRight {
@@ -697,52 +601,78 @@ body {
 }
 
 .toast.success {
-    background: #4CAF50;
+    background: #28a745;
 }
 
 .toast.warning {
-    background: #FF9800;
+    background: #ffc107;
+    color: #212529;
 }
 
 .toast.error {
-    background: #f44336;
+    background: #dc3545;
 }
 
 .toast.info {
-    background: #2196F3;
+    background: #17a2b8;
+}
+
+/* Install Button Styles */
+.install-btn {
+    display: none; /* Hidden by default, shown by JavaScript */
+}
+
+.install-info {
+    margin-top: 15px;
+    padding: 12px;
+    background: #d4edda;
+    border-radius: 8px;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.install-info p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.install-info small {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.test-btn {
+    margin-top: 15px !important;
+    background: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.test-btn:hover {
+    background: #e0a800 !important;
 }
 
 /* Install Button Animation */
 @keyframes pulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
     }
     70% {
         transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
     }
 }
 
 .pulse {
     animation: pulse 2s infinite;
+    display: flex !important;
 }
 
-/* Loading spinner */
-.spinner {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Badge styles for urgency */
+/* Badge styles */
 .badge-urgent {
     background-color: #f72585;
     color: white;
@@ -753,23 +683,69 @@ body {
     margin-left: 8px;
 }
 
-/* Status indicators */
-.status-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 6px;
+@media (max-width: 768px) {
+    .logo h1 {
+        font-size: 2.5rem;
+    }
+    
+    .logo {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .countdown {
+        font-size: 1.4rem;
+        padding: 8px 16px;
+    }
+    
+    .notification-buttons {
+        flex-direction: column;
+    }
+    
+    .notification-buttons .btn {
+        width: 100%;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .toast {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
 }
 
-.status-active {
-    background-color: #4CAF50;
-}
-
-.status-inactive {
-    background-color: #f44336;
-}
-
-.status-pending {
-    background-color: #FF9800;
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header {
+        padding: 10px;
+    }
+    
+    .logo h1 {
+        font-size: 2rem;
+    }
+    
+    .form-section h2,
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .reminder-contact {
+        font-size: 1.1rem;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
 }
