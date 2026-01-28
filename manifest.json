@@ -1,9 +1,16 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Call reminders",
-  "start_url": ".",
+  "description": "Call reminder app with background notifications",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4361ee"
+  "background_color": "#4361ee",
+  "theme_color": "#4361ee",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ]
 }
