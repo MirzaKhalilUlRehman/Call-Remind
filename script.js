@@ -9,6 +9,7 @@ const upcomingTime = document.getElementById('upcomingTime');
 const enableNotificationsBtn = document.getElementById('enableNotifications');
 const notificationStatus = document.getElementById('notificationStatus');
 const installButton = document.getElementById('installButton');
+const installInfo = document.getElementById('installInfo');
 const contactNameInput = document.getElementById('contactName');
 const phoneNumberInput = document.getElementById('phoneNumber');
 const callDateInput = document.getElementById('callDate');
@@ -25,6 +26,7 @@ const reminderDetails = document.getElementById('reminderDetails');
 let reminders = [];
 let reminderToDelete = null;
 let deferredPrompt = null;
+let serviceWorkerRegistration = null;
 
 // Initialize
 window.addEventListener('DOMContentLoaded', () => {
@@ -47,9 +49,53 @@ window.addEventListener('DOMContentLoaded', () => {
     checkNotificationPermission();
     startCountdownTimer();
     
+    // Initialize Service Worker
+    initServiceWorker();
+    
     // Event listeners
     setupEventListeners();
+    
+    // Check if already installed
+    checkIfInstalled();
 });
+
+// Initialize Service Worker
+async function initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            serviceWorkerRegistration = await navigator.serviceWorker.register('service-worker.js');
+            console.log('Service Worker registered');
+            
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data.type === 'REMINDER_TRIGGERED') {
+                    const reminderId = event.data.reminderId;
+                    const reminder = reminders.find(r => r.id === reminderId);
+                    if (reminder) {
+                        reminder.notified = true;
+                        reminder.isExpired = true;
+                        saveReminders();
+                        renderReminders();
+                        updateUpcomingCall();
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.log('Service Worker error:', error);
+        }
+    }
+}
+
+// Check if app is already installed
+function checkIfInstalled() {
+    // Check display mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App is already installed');
+        installButton.style.display = 'none';
+        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installed - Background notifications active</p>';
+    }
+}
 
 // Event Listeners
 function setupEventListeners() {
@@ -67,28 +113,76 @@ function setupEventListeners() {
     // Notifications
     enableNotificationsBtn.addEventListener('click', handleEnableNotifications);
     
-    // Install button
+    // Install button - THIS WILL TRIGGER INSTALLATION
     installButton.addEventListener('click', installApp);
     
-    // PWA install
+    // PWA install prompt - THIS EVENT SHOWS THE BUTTON
     window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('Install prompt available');
         e.preventDefault();
         deferredPrompt = e;
+        
+        // Show install button with animation
         installButton.style.display = 'inline-flex';
+        installButton.style.animation = 'pulse 2s infinite';
+        
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
     });
     
+    // App installed successfully
     window.addEventListener('appinstalled', () => {
+        console.log('App installed successfully');
         installButton.style.display = 'none';
+        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installed! You will get notifications even when browser is closed.</p>';
+        
+        // Show notification
+        showNotification('App Installed', 'CallRemind has been installed. You will now get background notifications.');
     });
 }
 
-// Install App
-function installApp() {
-    if (deferredPrompt) {
+// Install App - THIS STARTS THE INSTALLATION
+async function installApp() {
+    if (!deferredPrompt) {
+        alert('Install option not available. Please use Chrome menu (⋮) > Install app');
+        return;
+    }
+    
+    // Show loading state
+    const originalText = installButton.innerHTML;
+    installButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
+    installButton.disabled = true;
+    
+    try {
+        // Show the install prompt
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            deferredPrompt = null;
-        });
+        
+        // Wait for user choice
+        const choiceResult = await deferredPrompt.userChoice;
+        
+        if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted install');
+        } else {
+            console.log('User dismissed install');
+        }
+        
+        deferredPrompt = null;
+        
+    } catch (error) {
+        console.error('Install error:', error);
+        alert('Installation failed. Please try again.');
+    } finally {
+        // Restore button
+        installButton.innerHTML = originalText;
+        installButton.disabled = false;
     }
 }
 
@@ -128,9 +222,15 @@ function handleFormSubmit(e) {
 function handleEnableNotifications() {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
-            notificationStatus.textContent = 'On';
+            notificationStatus.textContent = 'Enabled';
             notificationStatus.className = 'notification-status text-success';
             enableNotificationsBtn.style.display = 'none';
+            
+            // Show install button if available
+            if (deferredPrompt) {
+                installButton.style.display = 'inline-flex';
+            }
+            
         } else if (permission === 'denied') {
             notificationStatus.textContent = 'Blocked';
             notificationStatus.className = 'notification-status text-danger';
@@ -146,7 +246,7 @@ function checkNotificationPermission() {
     }
 
     if (Notification.permission === 'granted') {
-        notificationStatus.textContent = 'On';
+        notificationStatus.textContent = 'Enabled';
         notificationStatus.className = 'notification-status text-success';
         enableNotificationsBtn.style.display = 'none';
     } else if (Notification.permission === 'denied') {
@@ -154,14 +254,30 @@ function checkNotificationPermission() {
         notificationStatus.className = 'notification-status text-danger';
         enableNotificationsBtn.style.display = 'none';
     } else {
-        notificationStatus.textContent = 'Off';
+        notificationStatus.textContent = 'Enable';
         notificationStatus.className = 'notification-status text-warning';
     }
 }
 
-function sendNotification(title, body) {
+function sendNotification(title, body, reminderId = null) {
     if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, { body: body });
+        try {
+            // Try to use service worker if available
+            if (serviceWorkerRegistration) {
+                serviceWorkerRegistration.showNotification(title, {
+                    body: body,
+                    requireInteraction: true,
+                    tag: `reminder-${reminderId || Date.now()}`,
+                    data: { reminderId: reminderId }
+                });
+            } else {
+                // Fallback to regular notification
+                const notification = new Notification(title, { body: body });
+                notification.onclick = () => window.focus();
+            }
+        } catch (error) {
+            console.log('Notification error:', error);
+        }
     }
 }
 
@@ -182,7 +298,29 @@ function addReminder(reminder) {
     saveReminders();
     renderReminders();
     updateUpcomingCall();
-    alert(`Reminder set for ${reminder.contactName}`);
+    alert(`Reminder set for ${reminder.contactName}!`);
+    
+    // If app is installed, schedule background notification
+    if (window.matchMedia('(display-mode: standalone)').matches && serviceWorkerRegistration) {
+        scheduleBackgroundNotification(newReminder);
+    }
+}
+
+// Schedule notification in background
+function scheduleBackgroundNotification(reminder) {
+    const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+    const now = new Date();
+    const timeDiff = reminderDateTime - now;
+    
+    if (timeDiff > 0 && serviceWorkerRegistration) {
+        // Send reminder to service worker
+        if (serviceWorkerRegistration.active) {
+            serviceWorkerRegistration.active.postMessage({
+                type: 'SCHEDULE_REMINDER',
+                reminder: reminder
+            });
+        }
+    }
 }
 
 function deleteReminder(id) {
@@ -340,14 +478,14 @@ function startCountdownTimer() {
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
-                sendNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`);
+                sendNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`, nextReminder.id);
                 nextReminder.notified = true;
                 saveReminders();
             }
         } else {
             countdownElement.textContent = '--:--:--';
             if (!nextReminder.notified) {
-                sendNotification('Time to Call!', `Call ${nextReminder.contactName} now!`);
+                sendNotification('Time to Call!', `Call ${nextReminder.contactName} now!`, nextReminder.id);
                 nextReminder.notified = true;
                 nextReminder.isExpired = true;
                 saveReminders();
