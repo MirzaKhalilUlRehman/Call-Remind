@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>callremind - Never Forget Important Calls</title>
+    <title>callremind</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
-    
-    <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4361ee">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="CallRemind">
 </head>
 <body>
     <div class="container">
@@ -24,38 +17,38 @@
                 <i class="fas fa-phone-alt"></i>
                 <h1>call<span>remind</span></h1>
             </div>
-            <p class="tagline">Never miss an important call again</p>
+            <p class="tagline">Never miss important calls</p>
         </header>
 
         <main class="main-content">
             <section class="form-section card">
-                <h2><i class="fas fa-plus-circle"></i> Schedule a Call Reminder</h2>
+                <h2><i class="fas fa-plus-circle"></i> Schedule Reminder</h2>
                 <form id="reminderForm">
                     <div class="form-group">
-                        <label for="contactName"><i class="fas fa-user"></i> Contact Name *</label>
+                        <label for="contactName"><i class="fas fa-user"></i> Contact Name</label>
                         <input type="text" id="contactName" placeholder="Name" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="phoneNumber"><i class="fas fa-phone"></i> Phone Number</label>
-                        <input type="tel" id="phoneNumber" placeholder="Contact Number">
+                        <input type="tel" id="phoneNumber" placeholder="Phone">
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="callDate"><i class="fas fa-calendar"></i> Date *</label>
+                            <label for="callDate"><i class="fas fa-calendar"></i> Date</label>
                             <input type="date" id="callDate" required>
                         </div>
                         
                         <div class="form-group">
-                            <label for="callTime"><i class="fas fa-clock"></i> Time *</label>
+                            <label for="callTime"><i class="fas fa-clock"></i> Time</label>
                             <input type="time" id="callTime" required>
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="notes"><i class="fas fa-sticky-note"></i> Notes (Optional)</label>
-                        <textarea id="notes" placeholder="Purpose of call, agenda, etc." rows="3"></textarea>
+                        <label for="notes"><i class="fas fa-sticky-note"></i> Notes</label>
+                        <textarea id="notes" placeholder="Notes" rows="2"></textarea>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">
@@ -66,15 +59,15 @@
 
             <section class="reminders-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-bell"></i> Active Reminders</h2>
+                    <h2><i class="fas fa-bell"></i> Reminders</h2>
                     <span id="reminderCount" class="badge">0</span>
                 </div>
                 
                 <div id="reminderList" class="reminders-list">
                     <div class="empty-state">
                         <i class="fas fa-phone-slash"></i>
-                        <h3>No reminders yet</h3>
-                        <p>Add your first call reminder above!</p>
+                        <h3>No reminders</h3>
+                        <p>Add a reminder</p>
                     </div>
                 </div>
                 
@@ -84,83 +77,47 @@
                         <div id="countdown" class="countdown">--:--:--</div>
                     </div>
                     <div class="upcoming-details">
-                        <p><strong id="upcomingContact">Contact Name</strong></p>
+                        <p><strong id="upcomingContact">Contact</strong></p>
                         <p><i class="far fa-clock"></i> <span id="upcomingTime">Time</span></p>
                     </div>
                 </div>
                 
-                <!-- Notification Section -->
                 <div class="notification-section card">
                     <div class="notification-header">
                         <h3><i class="fas fa-bell"></i> Notifications</h3>
-                        <span id="notificationStatus" class="notification-status text-warning">
-                            Click to enable
-                        </span>
+                        <span id="notificationStatus" class="notification-status">Off</span>
                     </div>
                     
                     <div class="notification-buttons">
                         <button id="enableNotifications" class="btn btn-primary">
-                            <i class="fas fa-bell"></i> Enable Notifications
+                            <i class="fas fa-bell"></i> Enable
                         </button>
                         
-                        <button id="disableNotifications" class="btn btn-outline-danger" style="display: none;">
-                            <i class="fas fa-bell-slash"></i> Disable
-                        </button>
-                        
-                        <!-- Install App Button -->
-                        <button id="installAppBtn" class="btn btn-success" style="display: none;">
+                        <button id="installButton" class="btn btn-success" style="display: none;">
                             <i class="fas fa-download"></i> Install App
                         </button>
-                    </div>
-                    
-                    <div class="app-install-info" style="margin-top: 15px; padding: 12px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #4361ee;">
-                        <p style="margin: 0; font-size: 0.9rem; color: #333;">
-                            <i class="fas fa-info-circle" style="color: #4361ee;"></i> 
-                            <strong>Get background notifications:</strong> 
-                            Install the app to receive reminders even when browser is closed.
-                        </p>
-                    </div>
-                    
-                    <!-- Notification Confirmation Card -->
-                    <div id="notificationConfirmation" class="notification-card hidden">
-                        <div class="notification-card-header">
-                            <i class="fas fa-info-circle"></i>
-                            <span id="notificationCardTitle">Notifications Enabled</span>
-                            <button class="close-card-btn" id="closeNotificationCard">&times;</button>
-                        </div>
-                        <div class="notification-card-body">
-                            <p id="notificationCardMessage">You will now receive call reminders!</p>
-                        </div>
-                        <div class="notification-card-footer">
-                            <button id="confirmNotification" class="btn btn-primary btn-sm">OK</button>
-                        </div>
                     </div>
                 </div>
             </section>
         </main>
 
         <footer class="footer">
-            <p>callremind &copy; <span id="currentYear"></span> | Built with <i class="fas fa-heart"></i> | Coded by KHALIL</p>
+            <p>callremind &copy; <span id="currentYear"></span></p>
         </footer>
     </div>
     
-    <!-- Confirmation Modal -->
     <div id="confirmationModal" class="confirmation-modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-exclamation-triangle"></i> Delete Reminder</h3>
+                <h3><i class="fas fa-exclamation-triangle"></i> Delete</h3>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this reminder?</p>
+                <p>Delete this reminder?</p>
                 <div id="reminderDetails" class="reminder-details"></div>
             </div>
             <div class="modal-actions">
-                <button id="cancelDelete" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button id="confirmDelete" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+                <button id="confirmDelete" class="btn btn-danger">Delete</button>
             </div>
         </div>
     </div>
