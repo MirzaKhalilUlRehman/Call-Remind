@@ -9,7 +9,9 @@ const upcomingTime = document.getElementById('upcomingTime');
 const enableNotificationsBtn = document.getElementById('enableNotifications');
 const notificationStatus = document.getElementById('notificationStatus');
 const installButton = document.getElementById('installButton');
+const installedButton = document.getElementById('installedButton');
 const installInfo = document.getElementById('installInfo');
+const pwaStatus = document.getElementById('pwaStatus');
 const contactNameInput = document.getElementById('contactName');
 const phoneNumberInput = document.getElementById('phoneNumber');
 const callDateInput = document.getElementById('callDate');
@@ -22,40 +24,54 @@ const cancelDeleteBtn = document.getElementById('cancelDelete');
 const confirmDeleteBtn = document.getElementById('confirmDelete');
 const reminderDetails = document.getElementById('reminderDetails');
 
+// Toast element
+const toastElement = document.getElementById('toast');
+
 // Variables
 let reminders = [];
 let reminderToDelete = null;
 let deferredPrompt = null;
 let serviceWorkerRegistration = null;
 
+// Check if app is already installed
+function isPWAInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone === true ||
+           document.referrer.includes('android-app://') ||
+           window.location.protocol === 'file:';
+}
+
 // Initialize
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Set current year in footer
     document.getElementById('currentYear').textContent = new Date().getFullYear();
-
+    
     // Set default date/time
     initializeDateTime();
-
+    
     // Load reminders from localStorage
     loadReminders();
-
+    
     // Render UI
     renderReminders();
     updateUpcomingCall();
     checkNotificationPermission();
     startCountdownTimer();
-
+    
     // Initialize Service Worker
-    initServiceWorker();
-
+    await initServiceWorker();
+    
+    // Check PWA installation status
+    checkPWAStatus();
+    
     // Set up event listeners
     setupEventListeners();
-
-    // Check if app is already installed
-    checkIfInstalled();
-
-    // Handle online/offline status
-    setupOnlineStatus();
+    
+    // Check for existing reminders and schedule them
+    scheduleExistingReminders();
+    
+    // Show welcome message
+    showToast('Welcome to CallRemind!', 'info');
 });
 
 // Initialize date and time inputs
@@ -63,7 +79,7 @@ function initializeDateTime() {
     const today = new Date().toISOString().split('T')[0];
     callDateInput.min = today;
     callDateInput.value = today;
-
+    
     const nextHour = new Date();
     nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
     callTimeInput.value = nextHour.getHours().toString().padStart(2, '0') + ':' +
@@ -75,7 +91,7 @@ function loadReminders() {
     try {
         const storedReminders = localStorage.getItem('callremind_reminders');
         reminders = storedReminders ? JSON.parse(storedReminders) : [];
-
+        
         // Validate and clean up expired reminders
         const now = new Date();
         reminders.forEach(reminder => {
@@ -84,21 +100,22 @@ function loadReminders() {
                 reminder.isExpired = true;
             }
         });
-
-        // Remove very old reminders (older than 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
+        
+        // Remove very old reminders (older than 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
         reminders = reminders.filter(reminder => {
             const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-            return reminderDateTime > sevenDaysAgo;
+            return reminderDateTime > thirtyDaysAgo;
         });
-
+        
         saveReminders();
-
+        
     } catch (error) {
         console.error('Error loading reminders:', error);
         reminders = [];
+        showToast('Error loading reminders', 'error');
     }
 }
 
@@ -106,11 +123,29 @@ function loadReminders() {
 async function initServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            serviceWorkerRegistration = await navigator.serviceWorker.register('service-worker.js');
+            serviceWorkerRegistration = await navigator.serviceWorker.register('service-worker.js', {
+                scope: './'
+            });
+            
             console.log('Service Worker registered successfully');
-
+            
+            // Check for service worker updates
+            serviceWorkerRegistration.addEventListener('updatefound', () => {
+                const newWorker = serviceWorkerRegistration.installing;
+                console.log('Service Worker update found:', newWorker.state);
+                
+                newWorker.addEventListener('statechange', () => {
+                    console.log('New Service Worker state:', newWorker.state);
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showToast('New version available! Refresh to update.', 'info');
+                    }
+                });
+            });
+            
             // Listen for messages from service worker
             navigator.serviceWorker.addEventListener('message', event => {
+                console.log('Message from Service Worker:', event.data);
+                
                 if (event.data && event.data.type === 'REMINDER_TRIGGERED') {
                     const reminderId = event.data.reminderId;
                     const reminder = reminders.find(r => r.id === reminderId);
@@ -120,87 +155,73 @@ async function initServiceWorker() {
                         saveReminders();
                         renderReminders();
                         updateUpcomingCall();
+                        
+                        // Show notification even if app is open
+                        showToast(`Time to call ${reminder.contactName}!`, 'warning');
                     }
                 }
             });
-
-            // Check for updates
-            serviceWorkerRegistration.addEventListener('updatefound', () => {
-                console.log('Service Worker update found');
-            });
-
+            
         } catch (error) {
             console.error('Service Worker registration failed:', error);
+            showToast('Service Worker failed to register', 'error');
         }
     } else {
         console.log('Service Workers are not supported');
+        showToast('Background notifications not supported', 'warning');
     }
 }
 
-// Check if app is already installed
-function checkIfInstalled() {
-    // Check if running in standalone mode (installed PWA)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('App is already installed as PWA');
-        installButton.style.display = 'none';
-        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installed - Background notifications active</p>';
+// Check PWA status and show appropriate buttons
+function checkPWAStatus() {
+    const isInstalled = isPWAInstalled();
+    
+    if (isInstalled) {
+        console.log('PWA is already installed');
+        installButton.classList.add('hidden');
+        installedButton.classList.remove('hidden');
+        installInfo.classList.add('hidden');
+        pwaStatus.classList.remove('hidden');
+    } else {
+        console.log('PWA is not installed');
+        installButton.classList.add('hidden'); // Hidden by default, will show when installable
+        installedButton.classList.add('hidden');
+        installInfo.classList.remove('hidden');
+        pwaStatus.classList.add('hidden');
     }
-
-    // Check for iOS standalone mode
-    if (window.navigator.standalone === true) {
-        console.log('App is installed on iOS');
-        installButton.style.display = 'none';
-    }
-}
-
-// Set up online/offline status
-function setupOnlineStatus() {
-    window.addEventListener('online', () => {
-        console.log('App is online');
-        showToast('Back online', 'success');
-    });
-
-    window.addEventListener('offline', () => {
-        console.log('App is offline');
-        showToast('You are offline. Some features may be limited.', 'warning');
-    });
 }
 
 // Show toast notification
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', duration = 3000) {
     // Remove existing toast
-    const existingToast = document.querySelector('.toast');
+    const existingToast = document.querySelector('.toast:not(.hidden)');
     if (existingToast) {
-        existingToast.remove();
+        existingToast.classList.add('hidden');
     }
-
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-
-    // Add styles
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#2196F3'};
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-        font-weight: 500;
-    `;
-
-    document.body.appendChild(toast);
-
-    // Remove toast after 3 seconds
+    
+    // Set toast content and style
+    toastElement.textContent = message;
+    toastElement.className = `toast ${type}`;
+    toastElement.classList.remove('hidden');
+    
+    // Add icon based on type
+    let icon = 'ℹ️';
+    switch(type) {
+        case 'success': icon = '✅'; break;
+        case 'warning': icon = '⚠️'; break;
+        case 'error': icon = '❌'; break;
+        case 'info': icon = 'ℹ️'; break;
+    }
+    toastElement.textContent = `${icon} ${message}`;
+    
+    // Auto hide after duration
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        toastElement.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            toastElement.classList.add('hidden');
+            toastElement.style.animation = '';
+        }, 300);
+    }, duration);
 }
 
 // Event Listeners
@@ -208,107 +229,139 @@ function setupEventListeners() {
     // Modal events
     cancelDeleteBtn.addEventListener('click', closeModal);
     confirmDeleteBtn.addEventListener('click', confirmDelete);
-
+    
     // Close modal when clicking outside
     confirmationModal.addEventListener('click', (e) => {
         if (e.target === confirmationModal) {
             closeModal();
         }
     });
-
+    
     // Form submission
     reminderForm.addEventListener('submit', handleFormSubmit);
-
+    
     // Notifications
     enableNotificationsBtn.addEventListener('click', handleEnableNotifications);
-
+    
     // Install button
-    installButton.addEventListener('click', installApp);
-
-    // PWA install prompt
+    installButton.addEventListener('click', handleInstall);
+    
+    // PWA install prompt - This event shows the install button
     window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('Install prompt available');
+        console.log('beforeinstallprompt event fired');
         e.preventDefault();
         deferredPrompt = e;
-
-        // Show install button
-        installButton.style.display = 'inline-flex';
-
-        // Add pulse animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-                100% { transform: scale(1); }
-            }
-        `;
-        document.head.appendChild(style);
-
-        installButton.style.animation = 'pulse 2s infinite';
+        
+        // Show install button with animation
+        installButton.classList.remove('hidden');
+        installButton.classList.add('pulse');
+        
+        showToast('Install CallRemind for background notifications!', 'info', 5000);
     });
-
+    
     // App installed successfully
     window.addEventListener('appinstalled', () => {
         console.log('App installed successfully');
-        installButton.style.display = 'none';
-        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installed! You will get notifications even when browser is closed.</p>';
-        showToast('App installed successfully!', 'success');
+        deferredPrompt = null;
+        
+        // Update UI
+        installButton.classList.add('hidden');
+        installButton.classList.remove('pulse');
+        installedButton.classList.remove('hidden');
+        installInfo.classList.add('hidden');
+        pwaStatus.classList.remove('hidden');
+        
+        showToast('CallRemind installed successfully! You will now get background notifications.', 'success');
+        
+        // Reschedule all reminders with background support
+        scheduleExistingReminders();
     });
-
+    
     // Handle Escape key to close modal
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !confirmationModal.classList.contains('hidden')) {
             closeModal();
         }
     });
+    
+    // Handle online/offline status
+    window.addEventListener('online', () => {
+        showToast('Back online', 'success');
+    });
+    
+    window.addEventListener('offline', () => {
+        showToast('You are offline. Some features may be limited.', 'warning');
+    });
 }
 
-// Install App
-async function installApp() {
+// Handle PWA installation
+async function handleInstall() {
     if (!deferredPrompt) {
-        // Show alternative installation instructions
-        const result = confirm('Install option not available. Would you like to see installation instructions?');
-        if (result) {
-            alert('To install this app:\n\n1. Click the menu (⋮) in Chrome/Edge\n2. Select "Install app" or "Add to Home Screen"\n3. Follow the prompts\n\nOn Safari iOS:\n1. Tap the Share button\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"');
-        }
+        // Show manual installation instructions
+        showManualInstallInstructions();
         return;
     }
-
+    
     // Show loading state
     const originalText = installButton.innerHTML;
-    const originalDisabled = installButton.disabled;
     installButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
     installButton.disabled = true;
-
+    
     try {
         // Show the install prompt
         deferredPrompt.prompt();
-
+        
         // Wait for user choice
         const choiceResult = await deferredPrompt.userChoice;
-
+        
         if (choiceResult.outcome === 'accepted') {
             console.log('User accepted install');
-            // Button will be hidden by appinstalled event
+            // The appinstalled event will handle the UI update
         } else {
             console.log('User dismissed install');
-            // Keep button visible for next time
-            deferredPrompt = null;
-            installButton.style.animation = 'none';
+            showToast('Installation cancelled', 'warning');
+            
+            // Reset button
+            installButton.innerHTML = originalText;
+            installButton.disabled = false;
         }
-
+        
+        deferredPrompt = null;
+        
     } catch (error) {
         console.error('Install error:', error);
-        showToast('Installation failed. Please try again or use browser menu.', 'warning');
-        deferredPrompt = null;
-        installButton.style.animation = 'none';
-    } finally {
-        // Only restore if not installed
-        if (!window.matchMedia('(display-mode: standalone)').matches) {
-            installButton.innerHTML = originalText;
-            installButton.disabled = originalDisabled;
-        }
+        showToast('Installation failed. Please try again.', 'error');
+        
+        // Reset button
+        installButton.innerHTML = originalText;
+        installButton.disabled = false;
+    }
+}
+
+// Show manual installation instructions
+function showManualInstallInstructions() {
+    const instructions = `
+How to install CallRemind:
+
+On Chrome/Edge (Desktop):
+1. Click the menu button (⋮) in the top right
+2. Select "Install CallRemind" or "Add to Home Screen"
+3. Click "Install"
+
+On Chrome (Android):
+1. Tap the menu button (⋮) in the top right
+2. Tap "Add to Home screen"
+3. Tap "Add"
+
+On Safari (iPhone/iPad):
+1. Tap the Share button (📤)
+2. Scroll down and tap "Add to Home Screen"
+3. Tap "Add"
+
+Installing the app enables background notifications!`;
+
+    if (confirm(instructions)) {
+        // User acknowledged
     }
 }
 
@@ -326,56 +379,56 @@ function handleFormSubmit(e) {
 
     // Validation
     if (!reminder.contactName) {
-        alert('Please enter a contact name');
+        showToast('Please enter a contact name', 'error');
         contactNameInput.focus();
         return;
     }
 
     const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
     const now = new Date();
-
+    
     if (reminderDateTime <= now) {
-        alert('Please select a future date and time');
+        showToast('Please select a future date and time', 'error');
         return;
     }
 
     // Add reminder
     addReminder(reminder);
-
+    
     // Reset form
     reminderForm.reset();
     initializeDateTime();
-
+    
     // Focus on contact name
     contactNameInput.focus();
 }
 
 // Notifications
-function handleEnableNotifications() {
+async function handleEnableNotifications() {
     if (!('Notification' in window)) {
-        alert('Notifications are not supported in your browser');
+        showToast('Notifications are not supported in your browser', 'error');
         return;
     }
 
-    Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-            notificationStatus.textContent = 'Enabled';
-            notificationStatus.className = 'notification-status text-success';
-            enableNotificationsBtn.style.display = 'none';
-            showToast('Notifications enabled!', 'success');
-
-            // Show install button if available
-            if (deferredPrompt) {
-                installButton.style.display = 'inline-flex';
-            }
-
-        } else if (permission === 'denied') {
-            notificationStatus.textContent = 'Blocked';
-            notificationStatus.className = 'notification-status text-danger';
-            enableNotificationsBtn.style.display = 'none';
-            showToast('Notifications blocked. Please enable in browser settings.', 'warning');
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+        notificationStatus.textContent = 'Enabled';
+        notificationStatus.className = 'notification-status text-success';
+        enableNotificationsBtn.style.display = 'none';
+        showToast('Notifications enabled!', 'success');
+        
+        // Show install button if PWA is installable
+        if (deferredPrompt && !isPWAInstalled()) {
+            installButton.classList.remove('hidden');
         }
-    });
+        
+    } else if (permission === 'denied') {
+        notificationStatus.textContent = 'Blocked';
+        notificationStatus.className = 'notification-status text-danger';
+        enableNotificationsBtn.style.display = 'none';
+        showToast('Notifications blocked. Please enable in browser settings.', 'warning');
+    }
 }
 
 function checkNotificationPermission() {
@@ -408,13 +461,17 @@ function sendNotification(title, body, reminderId = null) {
                 serviceWorkerRegistration.showNotification(title, {
                     body: body,
                     icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                    badge: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
                     requireInteraction: true,
                     tag: `reminder-${reminderId || Date.now()}`,
-                    data: { reminderId: reminderId }
+                    data: { 
+                        reminderId: reminderId,
+                        type: 'REMINDER'
+                    }
                 });
             } else {
                 // Fallback to regular notification
-                const notification = new Notification(title, {
+                const notification = new Notification(title, { 
                     body: body,
                     icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
                 });
@@ -447,32 +504,39 @@ function addReminder(reminder) {
     saveReminders();
     renderReminders();
     updateUpcomingCall();
-
+    
+    // Schedule background notification
+    scheduleReminderForBackground(newReminder);
+    
     // Show success message
     const reminderDateTime = new Date(`${newReminder.callDate}T${newReminder.callTime}`);
     const formattedDate = reminderDateTime.toLocaleDateString();
     const formattedTime = reminderDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    showToast(`Reminder set for ${newReminder.contactName} on ${formattedDate} at ${formattedTime}`, 'success');
-
-    // If app is installed, schedule background notification
-    if (window.matchMedia('(display-mode: standalone)').matches && serviceWorkerRegistration) {
-        scheduleBackgroundNotification(newReminder);
-    }
+    
+    const message = isPWAInstalled() 
+        ? `Reminder set for ${newReminder.contactName}! You'll get notifications even when the app is closed.`
+        : `Reminder set for ${newReminder.contactName} on ${formattedDate} at ${formattedTime}`;
+    
+    showToast(message, 'success');
 }
 
-// Schedule notification in background
-function scheduleBackgroundNotification(reminder) {
+// Schedule reminder for background notifications
+function scheduleReminderForBackground(reminder) {
+    if (!serviceWorkerRegistration) {
+        console.log('Service Worker not available for background scheduling');
+        return;
+    }
+    
     const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
     const now = new Date();
     const timeDiff = reminderDateTime - now;
-
-    if (timeDiff > 0 && serviceWorkerRegistration) {
-        // Send reminder to service worker
-        const target = serviceWorkerRegistration.active ||
-            serviceWorkerRegistration.waiting ||
-            serviceWorkerRegistration.installing;
-
+    
+    if (timeDiff > 0) {
+        // Send reminder to service worker for background scheduling
+        const target = serviceWorkerRegistration.active || 
+                      serviceWorkerRegistration.waiting || 
+                      serviceWorkerRegistration.installing;
+        
         if (target) {
             target.postMessage({
                 type: 'SCHEDULE_REMINDER',
@@ -481,6 +545,21 @@ function scheduleBackgroundNotification(reminder) {
             console.log('Reminder scheduled in background:', reminder.contactName);
         }
     }
+}
+
+// Schedule all existing reminders for background notifications
+function scheduleExistingReminders() {
+    if (!serviceWorkerRegistration || !isPWAInstalled()) {
+        return;
+    }
+    
+    const now = new Date();
+    reminders.forEach(reminder => {
+        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+        if (reminderDateTime > now && !reminder.isExpired) {
+            scheduleReminderForBackground(reminder);
+        }
+    });
 }
 
 function deleteReminder(id) {
@@ -503,11 +582,11 @@ function showDeleteConfirmation(reminder) {
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+    return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
     });
 }
 
@@ -539,7 +618,7 @@ function renderReminders() {
         const bDate = new Date(`${b.callDate}T${b.callTime}`);
         return aDate - bDate;
     });
-
+    
     reminderCount.textContent = reminders.length;
     reminderList.innerHTML = '';
 
@@ -555,7 +634,7 @@ function renderReminders() {
     }
 
     const now = new Date();
-
+    
     reminders.forEach(reminder => {
         const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
         const timeDiff = reminderDateTime - now;
@@ -569,12 +648,12 @@ function renderReminders() {
                 <div>
                     <div class="reminder-contact">
                         <i class="fas fa-user"></i> ${reminder.contactName}
+                        ${isUrgent ? '<span class="badge-urgent">URGENT</span>' : ''}
                     </div>
                     ${reminder.phoneNumber ? `<div class="reminder-phone"><i class="fas fa-phone"></i> ${reminder.phoneNumber}</div>` : ''}
                 </div>
                 <div class="reminder-time">
                     <i class="far fa-calendar"></i> ${formatDate(reminder.callDate)} at ${reminder.callTime}
-                    ${isUrgent ? '<span class="badge" style="margin-left: 10px; background: var(--danger); font-size: 0.8rem;">URGENT</span>' : ''}
                 </div>
             </div>
             ${reminder.notes ? `<div class="reminder-notes"><i class="fas fa-sticky-note"></i> ${reminder.notes}</div>` : ''}
@@ -638,7 +717,7 @@ function startCountdownTimer() {
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
-
+    
     window.countdownInterval = setInterval(() => {
         const now = new Date();
         const nextReminder = reminders
@@ -663,14 +742,14 @@ function startCountdownTimer() {
             const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
+            
             if (days > 0) {
                 countdownElement.textContent = `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             } else {
                 countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
-
-            // Send notification 5 minutes before
+            
+            // Send notification 5 minutes before (if not already notified)
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified) {
                 sendNotification('Call Reminder', `Call ${nextReminder.contactName} in 5 minutes!`, nextReminder.id);
                 nextReminder.notified = true;
@@ -690,3 +769,13 @@ function startCountdownTimer() {
         }
     }, 1000);
 }
+
+// Export for testing
+window.CallRemind = {
+    reminders,
+    addReminder,
+    deleteReminder,
+    showToast,
+    isPWAInstalled,
+    checkPWAStatus
+};
