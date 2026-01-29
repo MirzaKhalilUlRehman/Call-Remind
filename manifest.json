@@ -1,60 +1,33 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Never miss important calls with background notifications",
-  "start_url": "/",
+  "description": "Call reminder with background notifications",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#4361ee",
   "theme_color": "#4361ee",
   "orientation": "portrait",
-  "scope": "/",
-  "lang": "en-US",
-  "categories": ["productivity", "utilities"],
+  "scope": "./",
   "icons": [
     {
       "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png",
       "sizes": "64x64",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
       "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/128/1f4de.png",
       "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
       "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/192/1f4de.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/512/1f4de.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "sizes": "800x600",
-      "type": "image/jpeg",
-      "form_factor": "wide",
-      "label": "CallRemind Dashboard"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Add New Reminder",
-      "short_name": "New",
-      "description": "Add a new call reminder",
-      "url": "/?new=true",
-      "icons": [{
-        "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/96/1f4de.png",
-        "sizes": "96x96"
-      }]
+      "type": "image/png"
     }
   ]
 }
