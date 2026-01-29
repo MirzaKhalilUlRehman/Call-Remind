@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
     
     <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
@@ -39,7 +39,7 @@
                     
                     <div class="form-group">
                         <label for="phoneNumber"><i class="fas fa-phone"></i> Phone Number</label>
-                        <input type="tel" id="phoneNumber" placeholder="Phone" pattern="[0-9]{10}">
+                        <input type="tel" id="phoneNumber" placeholder="Phone">
                     </div>
                     
                     <div class="form-row">
@@ -59,7 +59,7 @@
                         <textarea id="notes" placeholder="Notes" rows="2"></textarea>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
                         <i class="fas fa-bell"></i> Set Reminder
                     </button>
                 </form>
@@ -92,25 +92,56 @@
                 
                 <div class="notification-section card">
                     <div class="notification-header">
-                        <h3><i class="fas fa-bell"></i> Notifications</h3>
-                        <div>
-                            <span id="notificationStatus" class="notification-status">OFF</span>
-                            <span id="pwaStatus" class="pwa-status hidden">✓ Installed</span>
+                        <h3><i class="fas fa-bell"></i> App Status</h3>
+                        <div class="status-indicators">
+                            <span id="notificationStatus" class="status-badge status-off">Notifications OFF</span>
+                            <span id="pwaStatus" class="status-badge status-pwa hidden">App Installed</span>
                         </div>
                     </div>
                     
-                    <div class="notification-buttons">
-                        <button id="enableNotifications" class="btn btn-primary">
-                            <i class="fas fa-bell"></i> Enable Notifications
-                        </button>
+                    <!-- App Status Messages -->
+                    <div id="statusMessages">
+                        <div id="notificationRequired" class="status-message error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <strong>Notifications Required</strong>
+                                <p>You must enable notifications to add reminders</p>
+                            </div>
+                            <button id="enableNotifications" class="btn btn-enable">
+                                <i class="fas fa-bell"></i> Enable
+                            </button>
+                        </div>
                         
-                        <button id="installButton" class="btn btn-success hidden">
+                        <div id="notificationEnabled" class="status-message success hidden">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <strong>Notifications Enabled ✓</strong>
+                                <p>You can now add reminders</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Install Section -->
+                    <div id="installSection" class="install-section hidden">
+                        <div class="install-header">
+                            <i class="fas fa-download"></i>
+                            <div>
+                                <strong>Install App for Background Notifications</strong>
+                                <p>Get reminders even when app is closed</p>
+                            </div>
+                        </div>
+                        <button id="installButton" class="btn btn-install">
                             <i class="fas fa-download"></i> Install App
                         </button>
                     </div>
                     
-                    <div class="notification-info">
-                        <p><i class="fas fa-info-circle"></i> <span id="installMessage">Enable notifications to add reminders</span></p>
+                    <!-- App Installed Message -->
+                    <div id="installedMessage" class="status-message success hidden">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>App Installed ✓</strong>
+                            <p>Background notifications active</p>
+                        </div>
                     </div>
                     
                     <!-- Test Button -->
@@ -122,7 +153,7 @@
         </main>
 
         <footer class="footer">
-            <p>callremind © <span id="currentYear"></span> | Background Notifications Active</p>
+            <p>callremind © <span id="currentYear"></span></p>
         </footer>
     </div>
     
@@ -140,17 +171,6 @@
                 <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
                 <button id="confirmDelete" class="btn btn-danger">Delete</button>
             </div>
-        </div>
-    </div>
-
-    <!-- Notification Alert -->
-    <div id="notificationAlert" class="alert-modal hidden">
-        <div class="alert-content">
-            <i class="fas fa-exclamation-circle"></i>
-            <h3>Notifications Required</h3>
-            <p>You must enable notifications to use this app</p>
-            <button id="alertEnableBtn" class="btn btn-primary">Enable Now</button>
-            <button id="alertCloseBtn" class="btn btn-secondary">Cancel</button>
         </div>
     </div>
 
