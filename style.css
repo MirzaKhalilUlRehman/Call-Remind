@@ -1,5 +1,3 @@
-/* SAME AS YOUR ORIGINAL CSS, WITH ADDITIONS */
-
 * {
     margin: 0;
     padding: 0;
@@ -130,6 +128,7 @@ body {
     font-family: 'Roboto', sans-serif;
     font-size: 1rem;
     background-color: #fafbfc;
+    transition: border-color 0.3s ease;
 }
 
 .form-group input:focus,
@@ -162,6 +161,12 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
@@ -189,8 +194,25 @@ body {
 }
 
 .btn-success {
-    background-color: var(--success);
+    background-color: #28a745;
     color: white;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-test {
+    background-color: #ffc107;
+    color: #212529;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-test:hover {
+    background-color: #e0a800;
 }
 
 .section-header {
@@ -225,6 +247,9 @@ body {
     flex-direction: column;
     gap: 20px;
     margin-bottom: 30px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
 }
 
 .reminder-item {
@@ -233,6 +258,12 @@ body {
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border-left: 5px solid var(--primary);
+    transition: all 0.3s ease;
+}
+
+.reminder-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .reminder-item.urgent {
@@ -248,8 +279,7 @@ body {
 
 .reminder-item.expired {
     border-left-color: var(--gray);
-    background-color: rgba(108, 117, 125, 0.05);
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 .reminder-header {
@@ -382,8 +412,28 @@ body {
     font-weight: 600;
     padding: 6px 12px;
     border-radius: 6px;
-    background-color: var(--light-gray);
     font-size: 0.9rem;
+}
+
+.notification-status.on {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.notification-status.off {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.pwa-status {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-left: 8px;
 }
 
 .notification-buttons {
@@ -393,16 +443,21 @@ body {
     margin-bottom: 15px;
 }
 
-.notification-status.enabled {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+.notification-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #e8f4ff;
+    border-radius: 8px;
+    border: 1px solid #b3d9ff;
 }
 
-.notification-status.disabled {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+.notification-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #0066cc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .hidden {
@@ -417,7 +472,8 @@ body {
     margin-top: 30px;
 }
 
-.confirmation-modal {
+/* Modal Styles */
+.modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -427,10 +483,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1001;
+    z-index: 1000;
 }
 
-.confirmation-modal .modal-content {
+.modal-content {
     background: white;
     border-radius: var(--border-radius);
     padding: 25px;
@@ -460,7 +516,7 @@ body {
     background: var(--light-gray);
     padding: 15px;
     border-radius: 8px;
-    border-left: 4px solid var(--danger);
+    margin-top: 15px;
     font-size: 0.95rem;
 }
 
@@ -474,60 +530,14 @@ body {
     gap: 8px;
 }
 
-.reminder-details .reminder-phone {
-    color: var(--gray);
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.reminder-details .reminder-time {
-    color: var(--gray);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 5px;
-}
-
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 15px;
 }
 
-/* NEW STYLES FOR INSTALL BUTTON AND ALERTS */
-
-.install-info {
-    margin-top: 10px;
-    padding: 10px;
-    background: #e8f4ff;
-    border-radius: 6px;
-    border: 1px solid #b3d9ff;
-    font-size: 0.85rem;
-    color: #0066cc;
-}
-
-.install-info p {
-    margin: 0;
-}
-
-.pwa-status {
-    margin-top: 10px;
-    padding: 10px;
-    background: #d4edda;
-    border-radius: 6px;
-    border: 1px solid #c3e6cb;
-    font-size: 0.85rem;
-    color: #155724;
-}
-
-.pwa-status p {
-    margin: 0;
-}
-
-/* Notification Alert */
-.notification-alert {
+/* Alert Modal */
+.alert-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -537,44 +547,95 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1002;
+    z-index: 1001;
 }
 
-.notification-alert .alert-content {
+.alert-content {
     background: white;
     padding: 30px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     text-align: center;
     max-width: 400px;
     width: 90%;
 }
 
-.notification-alert i {
+.alert-content i {
     font-size: 3rem;
-    color: #f72585;
+    color: var(--danger);
     margin-bottom: 20px;
 }
 
-.notification-alert p {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-    color: #333;
+.alert-content h3 {
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 15px;
+    color: var(--dark);
+}
+
+.alert-content p {
+    margin-bottom: 25px;
+    color: var(--gray);
+}
+
+.alert-content .btn {
+    margin: 5px;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    font-weight: 500;
+    min-width: 250px;
+    max-width: 350px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+.toast.info {
+    background: #17a2b8;
 }
 
 /* Install Button Animation */
 @keyframes pulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7);
-    }
-    70% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 .pulse {
@@ -583,8 +644,19 @@ body {
 
 /* Form Disabled State */
 .form-disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     pointer-events: none;
+}
+
+/* Badge for urgent */
+.urgent-badge {
+    background: var(--danger);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 8px;
 }
 
 @media (max-width: 768px) {
@@ -592,16 +664,28 @@ body {
         font-size: 2.5rem;
     }
     
+    .logo {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
     .countdown {
         font-size: 1.4rem;
         padding: 8px 16px;
     }
     
-    .notification-buttons {
-        flex-direction: column;
+    .card {
+        padding: 20px;
     }
     
-    .notification-buttons .btn {
-        width: 100%;
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .toast {
+        left: 20px;
+        right: 20px;
+        max-width: none;
     }
 }
