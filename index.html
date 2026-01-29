@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📞</text></svg>">
+    <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png">
     
     <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
@@ -29,7 +29,6 @@
         </header>
 
         <main class="main-content">
-            <!-- FORM SECTION - SAME AS YOUR SCREENSHOT -->
             <section class="form-section card">
                 <h2><i class="fas fa-plus-circle"></i> Schedule Call Reminder</h2>
                 <form id="reminderForm">
@@ -40,7 +39,7 @@
                     
                     <div class="form-group">
                         <label for="phoneNumber"><i class="fas fa-phone"></i> Phone Number</label>
-                        <input type="tel" id="phoneNumber" placeholder="Phone">
+                        <input type="tel" id="phoneNumber" placeholder="Phone" pattern="[0-9]{10}">
                     </div>
                     
                     <div class="form-row">
@@ -66,7 +65,6 @@
                 </form>
             </section>
 
-            <!-- REMINDERS SECTION - SAME AS YOUR SCREENSHOT -->
             <section class="reminders-section">
                 <div class="section-header">
                     <h2><i class="fas fa-bell"></i> Reminders</h2>
@@ -81,7 +79,6 @@
                     </div>
                 </div>
                 
-                <!-- Next Call Section -->
                 <div id="upcomingCall" class="upcoming-card card hidden">
                     <div class="upcoming-header">
                         <h3><i class="fas fa-star"></i> Next Call</h3>
@@ -93,55 +90,44 @@
                     </div>
                 </div>
                 
-                <!-- NOTIFICATION SECTION - UPDATED -->
                 <div class="notification-section card">
                     <div class="notification-header">
                         <h3><i class="fas fa-bell"></i> Notifications</h3>
-                        <span id="notificationStatus" class="notification-status">OFF</span>
+                        <div>
+                            <span id="notificationStatus" class="notification-status">OFF</span>
+                            <span id="pwaStatus" class="pwa-status hidden">✓ Installed</span>
+                        </div>
                     </div>
                     
-                    <!-- Notification Buttons -->
                     <div class="notification-buttons">
                         <button id="enableNotifications" class="btn btn-primary">
-                            <i class="fas fa-bell"></i> Turn On Notifications
+                            <i class="fas fa-bell"></i> Enable Notifications
                         </button>
                         
-                        <!-- INSTALL BUTTON - WILL APPEAR WHEN PWA IS INSTALLABLE -->
                         <button id="installButton" class="btn btn-success hidden">
-                            <i class="fas fa-download"></i> Download App
-                        </button>
-                        
-                        <!-- Already Installed Status -->
-                        <button id="installedButton" class="btn btn-success hidden" disabled>
-                            <i class="fas fa-check"></i> App Installed
+                            <i class="fas fa-download"></i> Install App
                         </button>
                     </div>
                     
-                    <!-- Instructions -->
-                    <div id="installInfo" class="install-info hidden">
-                        <p>
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Download app for background notifications!</strong>
-                            <br>
-                            <small>Reminders work even when browser is closed</small>
-                        </p>
+                    <div class="notification-info">
+                        <p><i class="fas fa-info-circle"></i> <span id="installMessage">Enable notifications to add reminders</span></p>
                     </div>
                     
-                    <!-- App Status -->
-                    <div id="pwaStatus" class="pwa-status hidden">
-                        <p><i class="fas fa-check-circle"></i> App installed - Background notifications active</p>
-                    </div>
+                    <!-- Test Button -->
+                    <button id="testNotification" class="btn btn-test hidden">
+                        <i class="fas fa-bell"></i> Test Notification
+                    </button>
                 </div>
             </section>
         </main>
 
         <footer class="footer">
-            <p>callremind © <span id="currentYear"></span></p>
+            <p>callremind © <span id="currentYear"></span> | Background Notifications Active</p>
         </footer>
     </div>
     
-    <!-- DELETE MODAL - SAME AS YOUR SCREENSHOT -->
-    <div id="confirmationModal" class="confirmation-modal hidden">
+    <!-- Delete Modal -->
+    <div id="confirmationModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-exclamation-triangle"></i> Delete</h3>
@@ -158,13 +144,18 @@
     </div>
 
     <!-- Notification Alert -->
-    <div id="notificationAlert" class="notification-alert hidden">
+    <div id="notificationAlert" class="alert-modal hidden">
         <div class="alert-content">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Please enable notifications to use this app</p>
-            <button id="alertEnableBtn" class="btn btn-primary">Enable</button>
+            <i class="fas fa-exclamation-circle"></i>
+            <h3>Notifications Required</h3>
+            <p>You must enable notifications to use this app</p>
+            <button id="alertEnableBtn" class="btn btn-primary">Enable Now</button>
+            <button id="alertCloseBtn" class="btn btn-secondary">Cancel</button>
         </div>
     </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
 
     <script src="script.js"></script>
 </body>
