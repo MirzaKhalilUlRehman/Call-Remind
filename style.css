@@ -195,9 +195,9 @@ body {
 .btn-enable {
     background-color: #28a745;
     color: white;
-    padding: 10px 20px;
-    font-size: 0.9rem;
-    white-space: nowrap;
+    padding: 12px 24px;
+    width: 100%;
+    margin-top: 10px;
 }
 
 .btn-enable:hover {
@@ -208,22 +208,13 @@ body {
     background-color: #007bff;
     color: white;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
+    font-size: 1.1rem;
+    padding: 16px;
 }
 
 .btn-install:hover {
     background-color: #0056b3;
-}
-
-.btn-test {
-    background-color: #ffc107;
-    color: #212529;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.btn-test:hover {
-    background-color: #e0a800;
 }
 
 .btn-secondary {
@@ -462,7 +453,7 @@ body {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
     margin-bottom: 15px;
 }
@@ -478,7 +469,7 @@ body {
 }
 
 .status-message i {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     flex-shrink: 0;
 }
 
@@ -496,7 +487,7 @@ body {
 
 .status-message strong {
     display: block;
-    font-size: 1rem;
+    font-size: 1.1rem;
     margin-bottom: 4px;
 }
 
@@ -510,19 +501,19 @@ body {
     background-color: #e7f1ff;
     border: 1px solid #b3d9ff;
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
+    padding: 25px;
+    margin-top: 20px;
 }
 
 .install-header {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .install-header i {
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: #007bff;
 }
 
@@ -532,15 +523,23 @@ body {
 
 .install-header strong {
     display: block;
-    font-size: 1rem;
-    margin-bottom: 4px;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
     color: #0066cc;
 }
 
 .install-header p {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #666;
     margin: 0;
+}
+
+.install-note {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
 }
 
 .hidden {
@@ -692,7 +691,7 @@ body {
 
 /* Form Disabled State */
 .form-disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     pointer-events: none;
 }
 
@@ -743,7 +742,8 @@ body {
         gap: 10px;
     }
     
-    .status-message .btn-enable {
-        width: 100%;
+    .install-header {
+        flex-direction: column;
+        text-align: center;
     }
 }
