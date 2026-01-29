@@ -1,8 +1,8 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Call reminder app",
-  "start_url": "./",
+  "description": "Never miss important calls",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#4361ee",
   "theme_color": "#4361ee",
