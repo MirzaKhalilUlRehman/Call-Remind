@@ -95,7 +95,7 @@
                         <h3><i class="fas fa-bell"></i> App Status</h3>
                         <div class="status-indicators">
                             <span id="notificationStatus" class="status-badge status-off">Notifications OFF</span>
-                            <span id="pwaStatus" class="status-badge status-pwa hidden">App Installed</span>
+                            <span id="pwaStatus" class="status-badge status-pwa hidden">✓ Installed</span>
                         </div>
                     </div>
                     
@@ -104,11 +104,11 @@
                         <div id="notificationRequired" class="status-message error">
                             <i class="fas fa-exclamation-circle"></i>
                             <div>
-                                <strong>Notifications Required</strong>
-                                <p>You must enable notifications to add reminders</p>
+                                <strong>Enable Notifications First</strong>
+                                <p>Click button below to enable notifications</p>
                             </div>
                             <button id="enableNotifications" class="btn btn-enable">
-                                <i class="fas fa-bell"></i> Enable
+                                <i class="fas fa-bell"></i> Enable Notifications
                             </button>
                         </div>
                         
@@ -116,23 +116,32 @@
                             <i class="fas fa-check-circle"></i>
                             <div>
                                 <strong>Notifications Enabled ✓</strong>
-                                <p>You can now add reminders</p>
+                                <p>Now you can add reminders</p>
+                            </div>
+                        </div>
+                        
+                        <div id="notificationBlocked" class="status-message error hidden">
+                            <i class="fas fa-ban"></i>
+                            <div>
+                                <strong>Notifications Blocked</strong>
+                                <p>Please enable in browser settings</p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Install Section -->
+                    <!-- Install Section - Will show when notifications are enabled -->
                     <div id="installSection" class="install-section hidden">
                         <div class="install-header">
                             <i class="fas fa-download"></i>
                             <div>
                                 <strong>Install App for Background Notifications</strong>
-                                <p>Get reminders even when app is closed</p>
+                                <p>Get reminders even when browser is closed</p>
                             </div>
                         </div>
                         <button id="installButton" class="btn btn-install">
-                            <i class="fas fa-download"></i> Install App
+                            <i class="fas fa-download"></i> Install App Now
                         </button>
+                        <p class="install-note">Click to download and install the app</p>
                     </div>
                     
                     <!-- App Installed Message -->
@@ -140,14 +149,9 @@
                         <i class="fas fa-check-circle"></i>
                         <div>
                             <strong>App Installed ✓</strong>
-                            <p>Background notifications active</p>
+                            <p>Background notifications are active</p>
                         </div>
                     </div>
-                    
-                    <!-- Test Button -->
-                    <button id="testNotification" class="btn btn-test hidden">
-                        <i class="fas fa-bell"></i> Test Notification
-                    </button>
                 </div>
             </section>
         </main>
