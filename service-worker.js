@@ -1,89 +1,16 @@
-// Service Worker for CallRemind
+// Simple Service Worker for CallRemind
 const CACHE_NAME = 'callremind-v1';
-const urlsToCache = [
-    './',
-    './index.html',
-    './style.css',
-    './script.js',
-    './manifest.json',
-    'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
-];
 
 // Install event
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installing...');
-    
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[Service Worker] Caching app shell');
-                return cache.addAll(urlsToCache);
-            })
-            .then(() => {
-                console.log('[Service Worker] Install complete');
-                return self.skipWaiting();
-            })
-    );
+    self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
     console.log('[Service Worker] Activating...');
-    
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => {
-            console.log('[Service Worker] Activation complete');
-            
-            // Start checking reminders
-            startReminderChecker();
-            
-            return self.clients.claim();
-        })
-    );
-});
-
-// Fetch event - Cache first
-self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-    
-    event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                
-                return fetch(event.request)
-                    .then((response) => {
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-                        
-                        const responseToCache = response.clone();
-                        
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, responseToCache);
-                            });
-                        
-                        return response;
-                    })
-                    .catch(() => {
-                        if (event.request.url.includes('.html')) {
-                            return caches.match('./index.html');
-                        }
-                    });
-            })
-    );
+    event.waitUntil(self.clients.claim());
 });
 
 // Handle messages from main app
@@ -97,7 +24,7 @@ self.addEventListener('message', (event) => {
     }
 });
 
-// Schedule reminder
+// Schedule a reminder
 function scheduleReminder(reminder) {
     console.log('[Service Worker] Scheduling reminder:', reminder.contactName);
     
@@ -116,26 +43,14 @@ function scheduleReminder(reminder) {
         };
         
         scheduledReminders.push(reminderData);
+        console.log(`[Service Worker] Reminder scheduled: ${reminder.contactName}`);
         
-        // Save to IndexedDB
-        saveReminderToDB(reminderData);
-        
-        console.log(`[Service Worker] Reminder scheduled: ${reminder.contactName} at ${reminder.callTime}`);
+        // Start checking if not already started
+        if (!window.reminderCheckInterval) {
+            window.reminderCheckInterval = setInterval(checkReminders, 60000); // Check every minute
+            checkReminders();
+        }
     }
-}
-
-// Start checking reminders
-function startReminderChecker() {
-    console.log('[Service Worker] Starting reminder checker');
-    
-    // Load reminders from DB
-    loadRemindersFromDB();
-    
-    // Check every 30 seconds
-    setInterval(checkReminders, 30000);
-    
-    // Check immediately
-    checkReminders();
 }
 
 // Check reminders
@@ -143,26 +58,33 @@ function checkReminders() {
     const now = Date.now();
     
     scheduledReminders.forEach((reminderData, index) => {
-        // 5-minute warning
+        // Check for 5-minute warning
         const fiveMinutesBefore = reminderData.triggerTime - (5 * 60 * 1000);
         
         if (now >= fiveMinutesBefore && now < reminderData.triggerTime) {
-            sendReminderNotification(
-                '⏰ Call Reminder',
-                `Call ${reminderData.contactName} in 5 minutes!`,
-                reminderData
-            );
+            self.registration.showNotification('⏰ Call Reminder', {
+                body: `Call ${reminderData.contactName} in 5 minutes!`,
+                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                badge: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                requireInteraction: true,
+                tag: `reminder-${reminderData.id}`
+            });
         }
         
-        // Exact time
+        // Check for exact time
         if (now >= reminderData.triggerTime && now < reminderData.triggerTime + 60000) {
-            sendReminderNotification(
-                '📞 Time to Call!',
-                `Call ${reminderData.contactName} now!${reminderData.phoneNumber ? `\nPhone: ${reminderData.phoneNumber}` : ''}`,
-                reminderData
-            );
+            self.registration.showNotification('📞 Time to Call!', {
+                body: `Call ${reminderData.contactName} now!${reminderData.phoneNumber ? `\nPhone: ${reminderData.phoneNumber}` : ''}`,
+                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                badge: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                requireInteraction: true,
+                tag: `reminder-${reminderData.id}`,
+                data: {
+                    reminderId: reminderData.id
+                }
+            });
             
-            // Notify app
+            // Notify the main app
             self.clients.matchAll().then((clients) => {
                 clients.forEach((client) => {
                     client.postMessage({
@@ -172,77 +94,10 @@ function checkReminders() {
                 });
             });
             
-            // Remove
+            // Remove from array
             scheduledReminders.splice(index, 1);
-            deleteReminderFromDB(reminderData.id);
         }
     });
-}
-
-// Send notification
-function sendReminderNotification(title, body, reminderData) {
-    console.log('[Service Worker] Sending notification:', title);
-    
-    self.registration.showNotification(title, {
-        body: body,
-        icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
-        badge: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
-        requireInteraction: true,
-        tag: `reminder-${reminderData.id}`,
-        data: {
-            reminderId: reminderData.id
-        }
-    });
-}
-
-// IndexedDB functions
-function saveReminderToDB(reminderData) {
-    const request = indexedDB.open('CallRemindDB', 1);
-    
-    request.onupgradeneeded = function(event) {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('reminders')) {
-            db.createObjectStore('reminders', { keyPath: 'id' });
-        }
-    };
-    
-    request.onsuccess = function(event) {
-        const db = event.target.result;
-        const transaction = db.transaction(['reminders'], 'readwrite');
-        const store = transaction.objectStore('reminders');
-        store.put(reminderData);
-    };
-}
-
-function loadRemindersFromDB() {
-    const request = indexedDB.open('CallRemindDB', 1);
-    
-    request.onsuccess = function(event) {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('reminders')) return;
-        
-        const transaction = db.transaction(['reminders'], 'readonly');
-        const store = transaction.objectStore('reminders');
-        const getAllRequest = store.getAll();
-        
-        getAllRequest.onsuccess = function() {
-            scheduledReminders = getAllRequest.result || [];
-            console.log(`[Service Worker] Loaded ${scheduledReminders.length} reminders from DB`);
-        };
-    };
-}
-
-function deleteReminderFromDB(reminderId) {
-    const request = indexedDB.open('CallRemindDB', 1);
-    
-    request.onsuccess = function(event) {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('reminders')) return;
-        
-        const transaction = db.transaction(['reminders'], 'readwrite');
-        const store = transaction.objectStore('reminders');
-        store.delete(reminderId);
-    };
 }
 
 // Handle notification click
@@ -263,7 +118,7 @@ self.addEventListener('notificationclick', (event) => {
             }
             
             if (self.clients.openWindow) {
-                return self.clients.openWindow('./');
+                return self.clients.openWindow('/');
             }
         })
     );
