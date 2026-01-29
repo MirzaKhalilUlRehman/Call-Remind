@@ -1,7 +1,7 @@
 {
   "name": "CallRemind",
   "short_name": "CallRemind",
-  "description": "Call reminder with background notifications",
+  "description": "Never miss important calls with background notifications",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#4361ee",
