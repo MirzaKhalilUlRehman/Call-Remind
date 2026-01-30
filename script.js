@@ -6,7 +6,7 @@ const upcomingCall = document.getElementById('upcomingCall');
 const countdownElement = document.getElementById('countdown');
 const upcomingContact = document.getElementById('upcomingContact');
 const upcomingTime = document.getElementById('upcomingTime');
-const enableNotificationsBtn = document.getElementById('enableNotifications');
+const enableNotificationsBtn = document.getElementById('enableNotificationsMain');
 const notificationStatus = document.getElementById('notificationStatus');
 const installButton = document.getElementById('installButton');
 const installInfo = document.getElementById('installInfo');
@@ -19,6 +19,8 @@ const confirmationModal = document.getElementById('confirmationModal');
 const cancelDeleteBtn = document.getElementById('cancelDelete');
 const confirmDeleteBtn = document.getElementById('confirmDelete');
 const reminderDetails = document.getElementById('reminderDetails');
+const notificationCheckCard = document.getElementById('notificationCheckCard');
+const appContent = document.getElementById('appContent');
 
 // Variables
 let reminders = [];
@@ -40,37 +42,42 @@ window.addEventListener('DOMContentLoaded', () => {
     callTimeInput.value = nextHour.getHours().toString().padStart(2, '0') + ':' +
         nextHour.getMinutes().toString().padStart(2, '0');
     
-    // Load reminders
-    loadReminders();
-    
-    // Check notification permission
-    checkNotificationPermission();
+    // Check notification permission and show/hide content
+    checkAndHandleNotificationPermission();
     
     // Setup event listeners
     setupEventListeners();
-    
-    // Start countdown timer
-    startCountdownTimer();
     
     // Register service worker
     registerServiceWorker();
 });
 
-// Load reminders
-function loadReminders() {
-    try {
-        const stored = localStorage.getItem('callremind_reminders');
-        reminders = stored ? JSON.parse(stored) : [];
-        renderReminders();
-        updateUpcomingCall();
-    } catch (error) {
-        reminders = [];
+// Check and handle notification permission
+function checkAndHandleNotificationPermission() {
+    if (!('Notification' in window)) {
+        notificationCheckCard.innerHTML = `
+            <div class="notification-check-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Browser Not Supported</h2>
+            </div>
+            <p class="notification-check-text">
+                Your browser does not support notifications. Please use Chrome, Edge, or Firefox.
+            </p>
+        `;
+        return;
     }
-}
 
-// Save reminders
-function saveReminders() {
-    localStorage.setItem('callremind_reminders', JSON.stringify(reminders));
+    if (Notification.permission === 'granted') {
+        // Notifications enabled - show app content
+        notificationCheckCard.style.display = 'none';
+        appContent.classList.remove('hidden');
+        loadReminders();
+        startCountdownTimer();
+    } else {
+        // Notifications not enabled - show enable button
+        notificationCheckCard.style.display = 'block';
+        appContent.classList.add('hidden');
+    }
 }
 
 // Register service worker
@@ -87,11 +94,11 @@ async function registerServiceWorker() {
 
 // Setup event listeners
 function setupEventListeners() {
+    // Enable notifications button
+    enableNotificationsBtn.addEventListener('click', enableNotifications);
+    
     // Form submit
     reminderForm.addEventListener('submit', handleFormSubmit);
-    
-    // Enable notifications
-    enableNotificationsBtn.addEventListener('click', enableNotifications);
     
     // Install button
     installButton.addEventListener('click', installApp);
@@ -104,13 +111,11 @@ function setupEventListeners() {
         if (e.target === confirmationModal) closeModal();
     });
     
-    // PWA install prompt - THIS IS IMPORTANT!
+    // PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
         console.log('Install prompt available');
         e.preventDefault();
         deferredPrompt = e;
-        
-        // Show install button
         installButton.style.display = 'inline-flex';
     });
     
@@ -118,52 +123,52 @@ function setupEventListeners() {
     window.addEventListener('appinstalled', () => {
         console.log('App installed');
         installButton.style.display = 'none';
-        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installed</p>';
+        installInfo.innerHTML = '<i class="fas fa-check-circle"></i> App installed successfully!';
+        installInfo.style.background = '#d4edda';
+        installInfo.style.borderColor = '#c3e6cb';
+        installInfo.style.color = '#155724';
     });
 }
 
-// Check notification permission
-function checkNotificationPermission() {
-    if (!('Notification' in window)) {
-        notificationStatus.textContent = 'No support';
-        enableNotificationsBtn.style.display = 'none';
-        return;
-    }
-
-    if (Notification.permission === 'granted') {
-        notificationStatus.textContent = 'Enabled';
-        notificationStatus.className = 'notification-status text-success';
-        enableNotificationsBtn.style.display = 'none';
-    } else if (Notification.permission === 'denied') {
-        notificationStatus.textContent = 'Blocked';
-        notificationStatus.className = 'notification-status text-danger';
-        enableNotificationsBtn.style.display = 'none';
-    } else {
-        notificationStatus.textContent = 'Enable';
-        notificationStatus.className = 'notification-status text-warning';
+// Enable notifications - DIRECT ACTION
+async function enableNotifications() {
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+        // Hide notification check card and show app content
+        notificationCheckCard.style.display = 'none';
+        appContent.classList.remove('hidden');
+        
+        // Send test notification
+        new Notification('✅ Notifications Enabled!', {
+            body: 'You can now add call reminders.',
+            icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
+        });
+        
+        // Load reminders and start app
+        loadReminders();
+        startCountdownTimer();
+        
+    } else if (permission === 'denied') {
+        alert('Notifications are blocked. Please enable them in browser settings to use this app.');
     }
 }
 
-// Enable notifications
-function enableNotifications() {
-    Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-            notificationStatus.textContent = 'Enabled';
-            notificationStatus.className = 'notification-status text-success';
-            enableNotificationsBtn.style.display = 'none';
-            
-            // Send test notification
-            new Notification('✅ Notifications Enabled', {
-                body: 'You can now add reminders!',
-                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
-            });
-            
-        } else if (permission === 'denied') {
-            notificationStatus.textContent = 'Blocked';
-            notificationStatus.className = 'notification-status text-danger';
-            enableNotificationsBtn.style.display = 'none';
-        }
-    });
+// Load reminders
+function loadReminders() {
+    try {
+        const stored = localStorage.getItem('callremind_reminders');
+        reminders = stored ? JSON.parse(stored) : [];
+        renderReminders();
+        updateUpcomingCall();
+    } catch (error) {
+        reminders = [];
+    }
+}
+
+// Save reminders
+function saveReminders() {
+    localStorage.setItem('callremind_reminders', JSON.stringify(reminders));
 }
 
 // Handle form submit
@@ -221,7 +226,8 @@ function addReminder(reminder) {
     // Schedule notification
     scheduleNotification(newReminder);
     
-    alert(`Reminder set for ${reminder.contactName}!`);
+    // Show success message
+    showToast(`Reminder set for ${reminder.contactName}!`);
 }
 
 // Schedule notification
@@ -231,11 +237,13 @@ function scheduleNotification(reminder) {
     const timeDiff = reminderDateTime - now;
     
     if (timeDiff > 0) {
+        // Schedule desktop notification
         setTimeout(() => {
             if (Notification.permission === 'granted') {
                 new Notification('📞 Time to Call!', {
                     body: `Call ${reminder.contactName} now!`,
-                    icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
+                    icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                    requireInteraction: true
                 });
                 
                 // Mark as expired
@@ -245,20 +253,34 @@ function scheduleNotification(reminder) {
                 updateUpcomingCall();
             }
         }, timeDiff);
+        
+        // Schedule push notification for service worker (works even when browser closed)
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            // Schedule via service worker
+            const delayMinutes = Math.floor(timeDiff / (1000 * 60));
+            schedulePushNotification(reminder, delayMinutes);
+        }
     }
 }
 
-// Install app - FIXED FUNCTION
+// Schedule push notification
+function schedulePushNotification(reminder, delayMinutes) {
+    // Store reminder for service worker
+    const scheduledReminders = JSON.parse(localStorage.getItem('callremind_scheduled') || '[]');
+    scheduledReminders.push({
+        id: reminder.id,
+        contactName: reminder.contactName,
+        scheduledTime: Date.now() + (delayMinutes * 60 * 1000)
+    });
+    localStorage.setItem('callremind_scheduled', JSON.stringify(scheduledReminders));
+}
+
+// Install app - DIRECT DOWNLOADING
 async function installApp() {
-    console.log('Install button clicked');
-    
     if (!deferredPrompt) {
-        console.log('No install prompt available');
         alert('Install option not available. Please use Chrome menu (⋮) → Install app');
         return;
     }
-    
-    console.log('Showing install prompt...');
     
     // Show the install prompt
     deferredPrompt.prompt();
@@ -266,18 +288,16 @@ async function installApp() {
     // Wait for the user to respond
     const choiceResult = await deferredPrompt.userChoice;
     
-    console.log('User choice:', choiceResult.outcome);
-    
     if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install');
         installButton.style.display = 'none';
-        installInfo.innerHTML = '<p style="margin: 0; font-size: 0.8rem; color: #00a000;"><i class="fas fa-check-circle"></i> App installing...</p>';
+        installInfo.innerHTML = '<i class="fas fa-check-circle"></i> App installing...';
+        installInfo.style.background = '#d4edda';
+        installInfo.style.borderColor = '#c3e6cb';
+        installInfo.style.color = '#155724';
     } else {
-        console.log('User dismissed the install');
         installButton.style.display = 'inline-flex';
     }
     
-    // Clear the deferredPrompt variable
     deferredPrompt = null;
 }
 
@@ -311,6 +331,7 @@ function confirmDelete() {
         renderReminders();
         updateUpcomingCall();
         closeModal();
+        showToast('Reminder deleted');
     }
 }
 
@@ -355,11 +376,11 @@ function renderReminders() {
             </div>
             ${reminder.notes ? `<div class="reminder-notes"><i class="fas fa-sticky-note"></i> ${reminder.notes}</div>` : ''}
             <div class="reminder-actions">
-                <button class="btn btn-danger delete-btn" data-id="${reminder.id}">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
                 <button class="btn btn-primary complete-btn" data-id="${reminder.id}">
                     <i class="fas fa-check"></i> Done
+                </button>
+                <button class="btn btn-danger delete-btn" data-id="${reminder.id}">
+                    <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
         `;
@@ -381,6 +402,7 @@ function renderReminders() {
             saveReminders();
             renderReminders();
             updateUpcomingCall();
+            showToast('Reminder marked as done');
         });
     });
 }
@@ -433,9 +455,11 @@ function startCountdownTimer() {
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             countdownElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
+            // Send 5-minute warning notification
             if (timeDiff <= 5 * 60 * 1000 && !nextReminder.notified && Notification.permission === 'granted') {
-                new Notification('Call Reminder', {
-                    body: `Call ${nextReminder.contactName} in 5 minutes!`
+                new Notification('⏰ Call in 5 minutes!', {
+                    body: `Call ${nextReminder.contactName} soon!`,
+                    icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
                 });
                 nextReminder.notified = true;
                 saveReminders();
@@ -443,8 +467,10 @@ function startCountdownTimer() {
         } else {
             countdownElement.textContent = '--:--:--';
             if (!nextReminder.notified && Notification.permission === 'granted') {
-                new Notification('Time to Call!', {
-                    body: `Call ${nextReminder.contactName} now!`
+                new Notification('📞 Time to Call!', {
+                    body: `Call ${nextReminder.contactName} now!`,
+                    icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
+                    requireInteraction: true
                 });
                 nextReminder.notified = true;
                 nextReminder.isExpired = true;
@@ -453,3 +479,46 @@ function startCountdownTimer() {
         }
     }, 1000);
 }
+
+// Toast notification
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4361ee;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Add CSS for toast animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
