@@ -3,72 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CallRemind - Offline</title>
+    <title>Offline - CallRemind</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
+        .offline-container {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            justify-content: center;
+            min-height: 100vh;
             text-align: center;
             padding: 20px;
         }
-        .container {
-            max-width: 400px;
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
+        
+        .offline-icon {
+            font-size: 5rem;
             color: #4361ee;
             margin-bottom: 20px;
-            font-size: 2.5rem;
         }
-        p {
+        
+        .offline-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            color: #212529;
+            margin-bottom: 15px;
+        }
+        
+        .offline-text {
+            font-size: 1.2rem;
             color: #6c757d;
             margin-bottom: 30px;
-            line-height: 1.6;
+            max-width: 500px;
         }
-        .icon {
-            font-size: 4rem;
-            color: #4361ee;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background-color: #4361ee;
-            color: white;
-            padding: 12px 24px;
-            border: none;
+        
+        .offline-tip {
+            background: #e8f4ff;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #3a56d4;
+            border: 1px solid #b3d9ff;
+            margin-top: 30px;
+            max-width: 500px;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="icon">
-            <i class="fas fa-wifi-slash"></i>
-        </div>
-        <h1>📵 Offline</h1>
-        <p>You're currently offline. Don't worry! Your existing reminders are still available.</p>
-        <p>Please check your internet connection to add new reminders.</p>
-        <button class="btn" onclick="location.reload()">
-            <i class="fas fa-sync-alt"></i> Retry Connection
+    <div class="offline-container">
+        <i class="fas fa-wifi-slash offline-icon"></i>
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-text">
+            CallRemind needs an internet connection to work properly.
+            Please check your connection and try again.
+        </p>
+        <button onclick="window.location.reload()" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Retry
         </button>
+        <div class="offline-tip">
+            <p><strong>Tip:</strong> Your reminders are saved locally and will sync when you're back online.</p>
+        </div>
     </div>
 </body>
 </html>
