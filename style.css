@@ -27,6 +27,48 @@ body {
     line-height: 1.6;
 }
 
+/* Notification Screen */
+.notification-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.notification-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--box-shadow);
+}
+
+.notification-card i {
+    font-size: 3.5rem;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.notification-card h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.notification-card p {
+    color: var(--gray);
+    margin-bottom: 25px;
+}
+
+/* Container */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -36,7 +78,6 @@ body {
 .header {
     text-align: center;
     margin-bottom: 30px;
-    padding: 20px;
 }
 
 .logo {
@@ -44,23 +85,22 @@ body {
     align-items: center;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .logo i {
-    font-size: 2.8rem;
+    font-size: 2.5rem;
     color: var(--primary);
     background: white;
-    padding: 15px;
+    padding: 12px;
     border-radius: 50%;
     box-shadow: var(--box-shadow);
 }
 
 .logo h1 {
     font-family: 'Poppins', sans-serif;
-    font-size: 3.2rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    color: var(--dark);
 }
 
 .logo span {
@@ -68,79 +108,22 @@ body {
 }
 
 .tagline {
-    font-size: 1.2rem;
     color: var(--gray);
-    margin-top: 10px;
-    font-weight: 300;
+    font-size: 1rem;
 }
 
-/* Notification Requirement */
-.notification-requirement {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 60vh;
-}
-
-.notification-card {
-    background: white;
-    border-radius: var(--border-radius);
-    padding: 40px;
-    text-align: center;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: var(--box-shadow);
-}
-
-.notification-card i {
-    font-size: 4rem;
-    color: var(--primary);
-    margin-bottom: 20px;
-}
-
-.notification-card h2 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
-    color: var(--dark);
-    margin-bottom: 15px;
-}
-
-.notification-card p {
-    color: var(--gray);
-    margin-bottom: 25px;
-    font-size: 1.1rem;
-}
-
-/* Main App Content */
-.app-content {
-    display: block;
-}
-
-/* TWO COLUMN LAYOUT - EXACT SIDE BY SIDE */
+/* Two Column Layout */
 .two-column-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    margin-bottom: 40px;
+    gap: 25px;
+    margin-bottom: 30px;
 }
 
 @media (max-width: 992px) {
     .two-column-layout {
         grid-template-columns: 1fr;
     }
-}
-
-/* Left Column - Form */
-.left-column {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Right Column - Everything Else */
-.right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
 }
 
 /* Card */
@@ -152,40 +135,37 @@ body {
     border: 1px solid var(--light-gray);
 }
 
-/* Form Section */
+/* Form */
 .form-section h2 {
     font-family: 'Poppins', sans-serif;
-    color: var(--dark);
-    margin-bottom: 25px;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.8rem;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .form-group label {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-weight: 500;
-    color: var(--dark);
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     border: 2px solid var(--light-gray);
     border-radius: 8px;
     font-family: 'Roboto', sans-serif;
     font-size: 1rem;
-    background-color: #fafbfc;
 }
 
 .form-group input:focus,
@@ -197,7 +177,7 @@ body {
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 15px;
 }
 
 @media (max-width: 576px) {
@@ -208,7 +188,7 @@ body {
 
 /* Buttons */
 .btn {
-    padding: 14px 28px;
+    padding: 12px 24px;
     border: none;
     border-radius: 8px;
     font-family: 'Poppins', sans-serif;
@@ -218,80 +198,110 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s ease;
 }
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
-    background-color: var(--primary);
+    background: var(--primary);
     color: white;
     width: 100%;
-    margin-top: 10px;
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-dark);
+    background: var(--primary-dark);
 }
 
 .btn-success {
-    background-color: var(--success);
+    background: var(--success);
     color: white;
     width: 100%;
 }
 
 .btn-success:hover {
-    background-color: #3cb8e0;
+    background: #3cb8e0;
 }
 
 .btn-secondary {
-    background-color: white;
-    color: var(--primary);
-    border: 2px solid var(--primary);
+    background: var(--light-gray);
+    color: var(--dark);
 }
 
 .btn-danger {
-    background-color: var(--danger);
+    background: var(--danger);
     color: white;
     padding: 8px 16px;
-    font-size: 0.9rem;
+}
+
+/* Upcoming Card */
+.upcoming-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #7209b7 100%);
+    color: white;
+}
+
+.upcoming-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.upcoming-header h3 {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.countdown {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.upcoming-details p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
 }
 
 /* Reminders Section */
 .reminders-section {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
+    min-height: 250px;
 }
 
 .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .section-header h2 {
     font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
-    color: var(--dark);
+    font-size: 1.5rem;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .badge {
-    background-color: var(--primary);
+    background: var(--primary);
     color: white;
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 20px;
     font-weight: 600;
-    font-size: 1rem;
-    min-width: 40px;
+    font-size: 0.9rem;
+    min-width: 30px;
     text-align: center;
 }
 
@@ -299,22 +309,20 @@ body {
 .reminders-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    margin-bottom: 10px;
+    gap: 15px;
 }
 
 .reminder-item {
     background: white;
-    border-radius: var(--border-radius);
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border-left: 5px solid var(--primary);
+    border-radius: 10px;
+    padding: 18px;
+    border-left: 4px solid var(--primary);
     transition: all 0.3s ease;
 }
 
 .reminder-item:hover {
     transform: translateX(5px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .reminder-item.urgent {
@@ -332,209 +340,134 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .reminder-contact {
     font-weight: 700;
-    font-size: 1.3rem;
-    color: var(--dark);
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .reminder-phone {
     color: var(--gray);
-    font-size: 0.95rem;
-    margin-left: 28px;
+    font-size: 0.9rem;
+    margin-left: 24px;
     margin-top: 2px;
 }
 
 .reminder-time {
+    color: var(--gray);
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: var(--gray);
-    font-size: 0.95rem;
-    margin: 8px 0;
+    gap: 5px;
 }
 
 .reminder-notes {
-    background-color: var(--light-gray);
-    padding: 12px;
+    background: var(--light-gray);
+    padding: 10px;
     border-radius: 6px;
-    margin-top: 12px;
-    font-size: 0.95rem;
-    color: var(--dark);
+    margin-top: 10px;
+    font-size: 0.9rem;
 }
 
 .reminder-actions {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
-    margin-top: 15px;
+    margin-top: 12px;
+    justify-content: flex-end;
+}
+
+.reminder-actions .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
 }
 
 .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 40px 20px;
     color: var(--gray);
 }
 
 .empty-state i {
-    font-size: 4rem;
+    font-size: 3rem;
     color: var(--light-gray);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .empty-state h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    color: var(--gray);
-}
-
-/* Upcoming Card */
-.upcoming-card {
-    background: linear-gradient(135deg, var(--primary) 0%, #7209b7 100%);
-    color: white;
-}
-
-.upcoming-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.upcoming-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.5rem;
-}
-
-.countdown {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 10px 20px;
-    border-radius: 8px;
-    letter-spacing: 2px;
-}
-
-.upcoming-details p {
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.1rem;
-}
-
-/* Notification Section */
-.notification-section {
-    margin-top: 20px;
-}
-
-.notification-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.notification-header h3 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.4rem;
-    color: var(--dark);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.notification-status {
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    background-color: #d4edda;
-    color: #155724;
-    font-size: 0.9rem;
-}
-
-.notification-content {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.notification-content p {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--gray);
-}
-
-.text-success {
-    color: #28a745;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
 }
 
 /* Install Section */
 .install-section {
-    background: #e8f4ff;
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 20px;
-    border: 1px solid #b3d9ff;
+    margin-top: 10px;
 }
 
-.install-section h4 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--dark);
-    margin-bottom: 10px;
+.install-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.install-text {
-    color: var(--gray);
+    justify-content: space-between;
     margin-bottom: 15px;
-    font-size: 0.95rem;
 }
 
-.install-features {
+.install-header h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.install-info {
     margin-top: 15px;
     padding-top: 15px;
-    border-top: 1px solid #b3d9ff;
+    border-top: 1px solid var(--light-gray);
 }
 
-.install-features p {
+.install-info p {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 8px;
     font-size: 0.9rem;
     color: var(--dark);
 }
 
-.install-features i {
+.install-info i {
     color: var(--success);
 }
 
 /* Footer */
 .footer {
     text-align: center;
-    padding: 25px;
+    padding: 20px;
     color: var(--gray);
     border-top: 1px solid var(--light-gray);
-    margin-top: 30px;
+    margin-top: 20px;
 }
 
 /* Modal */
-.confirmation-modal {
+.modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -552,50 +485,38 @@ body {
     border-radius: var(--border-radius);
     padding: 25px;
     width: 90%;
-    max-width: 400px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    max-width: 350px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header {
-    margin-bottom: 20px;
-}
-
-.modal-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--danger);
+.modal-content h3 {
     font-family: 'Poppins', sans-serif;
-    font-size: 1.4rem;
-}
-
-.modal-body {
-    margin-bottom: 25px;
-}
-
-.reminder-details {
-    background: var(--light-gray);
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 15px;
-    font-size: 0.95rem;
-    border-left: 4px solid var(--danger);
-}
-
-.reminder-details strong {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--dark);
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+    color: var(--danger);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.modal-actions {
+.modal-content p {
+    color: var(--gray);
+    margin-bottom: 15px;
+}
+
+.reminder-info {
+    background: var(--light-gray);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--danger);
+    font-size: 0.9rem;
+}
+
+.modal-buttons {
     display: flex;
+    gap: 12px;
     justify-content: flex-end;
-    gap: 15px;
 }
 
 /* Toast */
@@ -605,18 +526,18 @@ body {
     right: 20px;
     background: var(--primary);
     color: white;
-    padding: 15px 25px;
+    padding: 12px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     z-index: 1001;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     max-width: 300px;
-    animation: slideInRight 0.3s ease;
+    animation: slideIn 0.3s ease;
 }
 
-@keyframes slideInRight {
+@keyframes slideIn {
     from {
         transform: translateX(100%);
         opacity: 0;
@@ -634,20 +555,33 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+    
     .logo h1 {
-        font-size: 2.5rem;
+        font-size: 2rem;
+    }
+    
+    .logo i {
+        font-size: 2rem;
+        padding: 10px;
+    }
+    
+    .card {
+        padding: 20px;
     }
     
     .countdown {
-        font-size: 1.4rem;
-        padding: 8px 16px;
+        font-size: 1.2rem;
+        padding: 6px 12px;
     }
     
-    .modal-actions {
+    .modal-buttons {
         flex-direction: column;
     }
     
-    .modal-actions .btn {
+    .modal-buttons .btn {
         width: 100%;
     }
 }
