@@ -1,6 +1,6 @@
 {
-  "name": "CallRemind",
-  "short_name": "CallRemind",
+  "name": "callremind",
+  "short_name": "callremind",
   "description": "Never miss important calls",
   "start_url": "/",
   "display": "standalone",
@@ -10,6 +10,16 @@
     {
       "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png",
       "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/128/1f4de.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/256/1f4de.png",
+      "sizes": "256x256",
       "type": "image/png"
     }
   ]
