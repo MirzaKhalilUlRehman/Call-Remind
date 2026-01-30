@@ -16,6 +16,7 @@
     --light-gray: #e9ecef;
     --border-radius: 12px;
     --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
 }
 
 body {
@@ -23,20 +24,85 @@ body {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     color: var(--dark);
     min-height: 100vh;
-    padding: 20px;
     line-height: 1.6;
 }
 
+/* Notification Screen */
+.notification-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4361ee 0%, #3a56d4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.notification-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-icon {
+    font-size: 4rem;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.notification-card h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem;
+    color: var(--dark);
+    margin-bottom: 15px;
+}
+
+.notification-card p {
+    color: var(--gray);
+    margin-bottom: 25px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.small-text {
+    font-size: 0.9rem !important;
+    color: var(--gray) !important;
+    margin-top: 20px !important;
+    opacity: 0.8;
+}
+
+/* Main Container */
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    padding: 20px;
 }
 
 /* Header */
 .header {
     text-align: center;
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 40px;
+    padding: 20px 0;
 }
 
 .logo {
@@ -48,7 +114,7 @@ body {
 }
 
 .logo i {
-    font-size: 2.8rem;
+    font-size: 3rem;
     color: var(--primary);
     background: white;
     padding: 15px;
@@ -58,7 +124,7 @@ body {
 
 .logo h1 {
     font-family: 'Poppins', sans-serif;
-    font-size: 3.2rem;
+    font-size: 3rem;
     font-weight: 700;
     color: var(--dark);
 }
@@ -74,55 +140,32 @@ body {
     font-weight: 300;
 }
 
-/* Notification Requirement */
-.notification-requirement {
-    max-width: 600px;
-    margin: 0 auto 30px;
-    text-align: center;
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    color: white;
-    border: none;
-}
-
-.notification-req-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.notification-req-header i {
-    font-size: 3.5rem;
-    color: white;
-}
-
-.notification-req-header h2 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
-    color: white;
-    margin: 0;
-}
-
-.notification-req-text {
-    font-size: 1.1rem;
-    margin-bottom: 25px;
-    opacity: 0.9;
-    line-height: 1.6;
-}
-
-/* Main Grid - ORIGINAL LAYOUT */
-.main-grid {
+/* Side by Side Layout */
+.side-by-side {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     margin-bottom: 40px;
 }
 
-@media (max-width: 992px) {
-    .main-grid {
+@media (max-width: 1100px) {
+    .side-by-side {
         grid-template-columns: 1fr;
+        gap: 25px;
     }
+}
+
+/* Left Side - Form */
+.left-side {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Right Side - Everything Else */
+.right-side {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
 }
 
 /* Card */
@@ -132,7 +175,12 @@ body {
     padding: 25px;
     box-shadow: var(--box-shadow);
     border: 1px solid var(--light-gray);
-    margin-bottom: 25px;
+    transition: var(--transition);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
 }
 
 /* Form Section */
@@ -143,7 +191,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
 }
 
 .form-group {
@@ -160,6 +208,11 @@ body {
     font-size: 1rem;
 }
 
+.form-group label i {
+    color: var(--primary);
+    width: 20px;
+}
+
 .form-group input,
 .form-group textarea {
     width: 100%;
@@ -169,7 +222,7 @@ body {
     font-family: 'Roboto', sans-serif;
     font-size: 1rem;
     background-color: #fafbfc;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .form-group input:focus,
@@ -182,7 +235,7 @@ body {
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 15px;
 }
 
 @media (max-width: 576px) {
@@ -204,7 +257,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .btn:hover {
@@ -212,11 +265,14 @@ body {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
+.btn:active {
+    transform: translateY(0);
+}
+
 .btn-primary {
     background-color: var(--primary);
     color: white;
     width: 100%;
-    margin-top: 10px;
 }
 
 .btn-primary:hover {
@@ -226,7 +282,6 @@ body {
 .btn-success {
     background-color: var(--success);
     color: white;
-    width: 100%;
 }
 
 .btn-success:hover {
@@ -242,28 +297,68 @@ body {
 .btn-danger {
     background-color: var(--danger);
     color: white;
-    padding: 8px 16px;
-    font-size: 0.9rem;
+    padding: 10px 20px;
 }
 
-/* Right Section */
-.right-section {
+.btn-danger:hover {
+    background-color: #e11575;
+}
+
+/* Upcoming Card */
+.upcoming-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #7209b7 100%);
+    color: white;
+}
+
+.upcoming-header {
     display: flex;
-    flex-direction: column;
-    gap: 25px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.upcoming-header h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.countdown {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+    letter-spacing: 1px;
+    backdrop-filter: blur(10px);
+}
+
+.upcoming-details p {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
 }
 
 /* Reminders Section */
+.reminders-section {
+    min-height: 300px;
+}
+
 .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .section-header h2 {
     font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     color: var(--dark);
     display: flex;
     align-items: center;
@@ -281,20 +376,20 @@ body {
     text-align: center;
 }
 
+/* Reminders List */
 .reminders-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    margin-bottom: 10px;
+    gap: 15px;
 }
 
 .reminder-item {
     background: white;
-    border-radius: var(--border-radius);
+    border-radius: 10px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border-left: 5px solid var(--primary);
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .reminder-item:hover {
@@ -322,7 +417,7 @@ body {
 
 .reminder-contact {
     font-weight: 700;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--dark);
     display: flex;
     align-items: center;
@@ -355,20 +450,13 @@ body {
     margin-top: 12px;
     font-size: 0.95rem;
     color: var(--dark);
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.reminder-notes i {
-    margin-top: 2px;
 }
 
 .reminder-actions {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
     margin-top: 15px;
+    justify-content: flex-end;
 }
 
 .empty-state {
@@ -390,58 +478,19 @@ body {
     color: var(--gray);
 }
 
-/* Upcoming Card */
-.upcoming-card {
-    background: linear-gradient(135deg, var(--primary) 0%, #7209b7 100%);
-    color: white;
+/* App Status */
+.app-status {
+    margin-top: auto;
 }
 
-.upcoming-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.upcoming-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.5rem;
-}
-
-.countdown {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 10px 20px;
-    border-radius: 8px;
-    letter-spacing: 2px;
-}
-
-.upcoming-details p {
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.1rem;
-}
-
-/* Notification Section */
-.notification-section {
-    margin-top: 0;
-}
-
-.notification-header {
+.status-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.notification-header h3 {
+.status-header h3 {
     font-family: 'Poppins', sans-serif;
     font-size: 1.4rem;
     color: var(--dark);
@@ -450,65 +499,81 @@ body {
     gap: 10px;
 }
 
-.notification-status {
+.status-badge {
     font-weight: 600;
     padding: 8px 16px;
-    border-radius: 6px;
-    background-color: #d4edda;
-    color: #155724;
+    border-radius: 20px;
     font-size: 0.9rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
 }
 
-.notification-info {
-    margin-bottom: 20px;
+.status-badge.active {
+    background-color: #d4edda;
+    color: #155724;
 }
 
-.notification-info p {
+.status-items {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.status-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-    color: var(--gray);
+    gap: 12px;
+    padding: 12px;
+    background: var(--light);
+    border-radius: 8px;
 }
 
-.notification-info .text-success {
-    color: #28a745;
+.status-item i {
+    font-size: 1.2rem;
 }
 
-/* Install Section */
-.install-section {
+.text-success {
+    color: var(--success);
+}
+
+/* Install Box */
+.install-box {
     background: #e8f4ff;
     padding: 20px;
     border-radius: 8px;
-    margin-top: 20px;
     border: 1px solid #b3d9ff;
 }
 
-.install-section h4 {
+.install-box h4 {
     font-family: 'Poppins', sans-serif;
     color: var(--dark);
     margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 1.2rem;
 }
 
-.install-text {
+.install-desc {
     color: var(--gray);
     margin-bottom: 15px;
     font-size: 0.95rem;
 }
 
-.install-benefits {
+.install-btn {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.install-features {
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid #b3d9ff;
 }
 
-.install-benefits p {
+.install-features p {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -517,7 +582,7 @@ body {
     color: var(--dark);
 }
 
-.install-benefits i {
+.install-features i {
     color: var(--success);
 }
 
@@ -528,10 +593,11 @@ body {
     color: var(--gray);
     border-top: 1px solid var(--light-gray);
     margin-top: 30px;
+    font-size: 0.9rem;
 }
 
 /* Modal */
-.confirmation-modal {
+.modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -542,73 +608,45 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    padding: 20px;
 }
 
 .modal-content {
     background: white;
     border-radius: var(--border-radius);
     padding: 25px;
-    width: 90%;
+    width: 100%;
     max-width: 400px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header {
-    margin-bottom: 20px;
-}
-
-.modal-header h3 {
+.modal-content h3 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.4rem;
+    color: var(--danger);
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--danger);
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.4rem;
 }
 
-.modal-body {
-    margin-bottom: 25px;
+.modal-content p {
+    color: var(--gray);
+    margin-bottom: 20px;
 }
 
-.reminder-details {
+.reminder-info {
     background: var(--light-gray);
     padding: 15px;
     border-radius: 8px;
-    margin-top: 15px;
-    font-size: 0.95rem;
+    margin-bottom: 25px;
     border-left: 4px solid var(--danger);
 }
 
-.reminder-details strong {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--dark);
-    font-size: 1.1rem;
+.modal-buttons {
     display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.reminder-details .reminder-phone {
-    color: var(--gray);
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.reminder-details .reminder-time {
-    color: var(--gray);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 5px;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
     gap: 15px;
+    justify-content: flex-end;
 }
 
 /* Toast */
@@ -625,11 +663,11 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    max-width: 300px;
-    animation: slideIn 0.3s ease;
+    max-width: 350px;
+    animation: slideInRight 0.3s ease;
 }
 
-@keyframes slideIn {
+@keyframes slideInRight {
     from {
         transform: translateX(100%);
         opacity: 0;
@@ -647,28 +685,43 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
     .logo h1 {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
     
-    .notification-req-header i {
-        font-size: 2.8rem;
+    .logo i {
+        font-size: 2.2rem;
+        padding: 12px;
     }
     
-    .notification-req-header h2 {
-        font-size: 1.5rem;
+    .tagline {
+        font-size: 1rem;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .form-section h2,
+    .section-header h2,
+    .status-header h3 {
+        font-size: 1.3rem;
     }
     
     .countdown {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         padding: 8px 16px;
     }
     
-    .modal-actions {
+    .modal-buttons {
         flex-direction: column;
     }
     
-    .modal-actions .btn {
+    .modal-buttons .btn {
         width: 100%;
     }
 }
