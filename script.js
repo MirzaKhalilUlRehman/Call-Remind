@@ -1,39 +1,43 @@
-// DOM Elements
-const step1 = document.getElementById('step1');
-const step2 = document.getElementById('step2');
-const enableBtn = document.getElementById('enableBtn');
-const reminderForm = document.getElementById('reminderForm');
-const reminderList = document.getElementById('reminderList');
-const reminderCount = document.getElementById('reminderCount');
-const nextCallCard = document.getElementById('nextCallCard');
-const countdownElement = document.getElementById('countdown');
-const nextContact = document.getElementById('nextContact');
-const nextTime = document.getElementById('nextTime');
-const installCard = document.getElementById('installCard');
-const installBtn = document.getElementById('installBtn');
-const currentTime = document.getElementById('currentTime');
-const contactNameInput = document.getElementById('contactName');
-const phoneNumberInput = document.getElementById('phoneNumber');
-const callDateInput = document.getElementById('callDate');
-const callTimeInput = document.getElementById('callTime');
-const notesInput = document.getElementById('notes');
-const deleteModal = document.getElementById('deleteModal');
-const cancelBtn = document.getElementById('cancelBtn');
-const confirmBtn = document.getElementById('confirmBtn');
-const reminderDetails = document.getElementById('reminderDetails');
-const toast = document.getElementById('toast');
-const currentYear = document.getElementById('currentYear');
+// ===== DOM Elements =====
+const elements = {
+    notificationScreen: document.getElementById('notificationScreen'),
+    mainApp: document.getElementById('mainApp'),
+    enableBtn: document.getElementById('enableBtn'),
+    reminderForm: document.getElementById('reminderForm'),
+    reminderList: document.getElementById('reminderList'),
+    reminderCount: document.getElementById('reminderCount'),
+    nextCallCard: document.getElementById('nextCallCard'),
+    countdown: document.getElementById('countdown'),
+    nextContact: document.getElementById('nextContact'),
+    nextTime: document.getElementById('nextTime'),
+    installCard: document.getElementById('installCard'),
+    installBtn: document.getElementById('installBtn'),
+    liveTime: document.getElementById('liveTime'),
+    deleteModal: document.getElementById('deleteModal'),
+    cancelBtn: document.getElementById('cancelBtn'),
+    confirmBtn: document.getElementById('confirmBtn'),
+    reminderDetails: document.getElementById('reminderDetails'),
+    toast: document.getElementById('toast'),
+    contactName: document.getElementById('contactName'),
+    phoneNumber: document.getElementById('phoneNumber'),
+    callDate: document.getElementById('callDate'),
+    callTime: document.getElementById('callTime'),
+    notes: document.getElementById('notes'),
+    currentYear: document.getElementById('currentYear')
+};
 
-// Variables
+// ===== App State =====
 let reminders = [];
 let reminderToDelete = null;
 let deferredPrompt = null;
-let scheduledNotifications = {};
+let timeouts = {};
 
-// Initialize App
+// ===== Initialize =====
 document.addEventListener('DOMContentLoaded', () => {
     // Set current year
-    currentYear.textContent = new Date().getFullYear();
+    if (elements.currentYear) {
+        elements.currentYear.textContent = new Date().getFullYear();
+    }
     
     // Initialize form
     initializeForm();
@@ -41,61 +45,72 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check notification permission
     checkNotificationPermission();
     
+    // Load saved reminders
+    loadReminders();
+    
     // Setup event listeners
     setupEventListeners();
     
+    // Start live clock
+    startLiveClock();
+    
     // Register service worker
     registerServiceWorker();
-    
-    // Start real-time clock
-    updateClock();
-    setInterval(updateClock, 60000); // Update every minute
 });
 
-// Initialize Form
+// ===== Initialize Form =====
 function initializeForm() {
     const today = new Date().toISOString().split('T')[0];
-    const now = new Date();
+    if (elements.callDate) {
+        elements.callDate.min = today;
+        elements.callDate.value = today;
+    }
     
-    // Set min date to today
-    callDateInput.min = today;
-    callDateInput.value = today;
-    
-    // Set default time to next 30 minutes
-    const nextHalfHour = new Date(now.getTime() + 30 * 60000);
-    const hours = nextHalfHour.getHours().toString().padStart(2, '0');
-    const minutes = Math.ceil(nextHalfHour.getMinutes() / 5) * 5; // Round to nearest 5 minutes
-    callTimeInput.value = `${hours}:${minutes.toString().padStart(2, '0')}`;
+    if (elements.callTime) {
+        const nextHour = new Date();
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+        elements.callTime.value = nextHour.toTimeString().slice(0, 5);
+    }
 }
 
-// Update Real-time Clock
-function updateClock() {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    currentTime.textContent = `${hours}:${minutes}`;
-}
-
-// Check Notification Permission
+// ===== Check Notification Permission =====
 function checkNotificationPermission() {
     if (!('Notification' in window)) {
-        showToast('Browser does not support notifications', 'error');
+        showNotificationUnsupported();
         return;
     }
-
+    
     if (Notification.permission === 'granted') {
-        // App is ready
-        step1.classList.add('hidden');
-        step2.classList.remove('hidden');
-        loadReminders();
+        elements.notificationScreen.classList.add('hidden');
+        elements.mainApp.classList.remove('hidden');
         startCountdown();
     } else if (Notification.permission === 'denied') {
-        // Notifications blocked
-        step1.innerHTML = `
-            <div class="step-card">
-                <div class="step-icon" style="color: var(--danger);">
-                    <i class="fas fa-ban"></i>
-                </div>
+        showNotificationBlocked();
+    }
+}
+
+// ===== Show Notification Unsupported =====
+function showNotificationUnsupported() {
+    if (elements.notificationScreen) {
+        elements.notificationScreen.innerHTML = `
+            <div class="screen-card">
+                <i class="fas fa-exclamation-triangle screen-icon" style="color: var(--warning);"></i>
+                <h2>Browser Not Supported</h2>
+                <p>Please use Chrome, Edge, or Firefox</p>
+                <button onclick="window.location.reload()" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Refresh
+                </button>
+            </div>
+        `;
+    }
+}
+
+// ===== Show Notification Blocked =====
+function showNotificationBlocked() {
+    if (elements.notificationScreen) {
+        elements.notificationScreen.innerHTML = `
+            <div class="screen-card">
+                <i class="fas fa-ban screen-icon" style="color: var(--danger);"></i>
                 <h2>Notifications Blocked</h2>
                 <p>Please enable notifications in browser settings</p>
                 <button onclick="window.location.reload()" class="btn btn-primary">
@@ -103,572 +118,480 @@ function checkNotificationPermission() {
                 </button>
             </div>
         `;
-    } else {
-        // Show enable screen
-        step1.classList.remove('hidden');
-        step2.classList.add('hidden');
     }
 }
 
-// Setup Event Listeners
+// ===== Setup Event Listeners =====
 function setupEventListeners() {
-    // Enable Notifications
-    enableBtn.addEventListener('click', enableNotifications);
+    // Enable notifications
+    if (elements.enableBtn) {
+        elements.enableBtn.addEventListener('click', enableNotifications);
+    }
     
     // Form submit
-    reminderForm.addEventListener('submit', handleFormSubmit);
+    if (elements.reminderForm) {
+        elements.reminderForm.addEventListener('submit', handleFormSubmit);
+    }
     
     // Install button
-    installBtn.addEventListener('click', handleInstall);
+    if (elements.installBtn) {
+        elements.installBtn.addEventListener('click', handleInstall);
+    }
     
     // Modal buttons
-    cancelBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
-    confirmBtn.addEventListener('click', confirmDelete);
+    if (elements.cancelBtn) {
+        elements.cancelBtn.addEventListener('click', hideModal);
+    }
     
-    // Close modal when clicking outside
-    deleteModal.addEventListener('click', (e) => {
-        if (e.target === deleteModal) deleteModal.classList.add('hidden');
-    });
+    if (elements.confirmBtn) {
+        elements.confirmBtn.addEventListener('click', confirmDelete);
+    }
+    
+    // Close modal on outside click
+    if (elements.deleteModal) {
+        elements.deleteModal.addEventListener('click', (e) => {
+            if (e.target === elements.deleteModal) hideModal();
+        });
+    }
     
     // PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        installCard.classList.remove('hidden');
+        if (elements.installCard) {
+            elements.installCard.classList.remove('hidden');
+        }
     });
     
     // App installed
     window.addEventListener('appinstalled', () => {
         showToast('App installed successfully!', 'success');
-        installCard.classList.add('hidden');
+        if (elements.installCard) {
+            elements.installCard.classList.add('hidden');
+        }
+        deferredPrompt = null;
     });
 }
 
-// Enable Notifications
+// ===== Enable Notifications =====
 async function enableNotifications() {
     try {
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            // Show main app
-            step1.classList.add('hidden');
-            step2.classList.remove('hidden');
+            elements.notificationScreen.classList.add('hidden');
+            elements.mainApp.classList.remove('hidden');
             
-            // Send welcome notification
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'TEST_NOTIFICATION',
-                    title: '✅ Notifications Enabled',
-                    body: 'callremind is ready to use!'
-                });
-            } else {
-                new Notification('✅ Notifications Enabled', {
-                    body: 'callremind is ready to use!',
-                    icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
-                });
-            }
-            
-            // Load and start app
-            loadReminders();
-            startCountdown();
-            
+            sendNotification('Welcome to callremind!', 'You can now set call reminders');
             showToast('Notifications enabled!', 'success');
             
-        } else if (permission === 'denied') {
-            showToast('Notifications blocked. Please enable in settings.', 'error');
+            loadReminders();
+            startCountdown();
         }
     } catch (error) {
-        console.error('Notification error:', error);
         showToast('Error enabling notifications', 'error');
     }
 }
 
-// Register Service Worker
+// ===== Send Notification =====
+function sendNotification(title, body) {
+    if (Notification.permission === 'granted') {
+        try {
+            new Notification(title, {
+                body: body,
+                icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png'
+            });
+        } catch (error) {
+            console.log('Notification error:', error);
+        }
+    }
+}
+
+// ===== Register Service Worker =====
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            const registration = await navigator.serviceWorker.register('service-worker.js');
-            console.log('Service Worker registered:', registration);
-            
-            // Listen for messages from service worker
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                if (event.data && event.data.type === 'REMINDER_TRIGGERED') {
-                    handleReminderTrigger(event.data.reminderId);
-                }
-            });
+            await navigator.serviceWorker.register('service-worker.js');
+            console.log('Service worker registered');
         } catch (error) {
-            console.error('Service Worker registration failed:', error);
+            console.log('Service worker registration failed:', error);
         }
     }
 }
 
-// Load reminders
+// ===== Load Reminders =====
 function loadReminders() {
     try {
-        const stored = localStorage.getItem('callremind_reminders');
-        reminders = stored ? JSON.parse(stored) : [];
+        const saved = localStorage.getItem('callremind_reminders');
+        reminders = saved ? JSON.parse(saved) : [];
         
-        // Load scheduled notifications
-        const scheduled = localStorage.getItem('callremind_scheduled');
-        scheduledNotifications = scheduled ? JSON.parse(scheduled) : {};
+        // Clean expired reminders
+        const now = new Date();
+        reminders = reminders.filter(r => {
+            const reminderTime = new Date(`${r.date}T${r.time}`);
+            return reminderTime > now && !r.completed;
+        });
         
+        saveReminders();
         renderReminders();
         updateNextCall();
-        
-        // Reschedule all notifications
-        rescheduleAllNotifications();
-        
+        scheduleAllNotifications();
     } catch (error) {
         reminders = [];
-        scheduledNotifications = {};
+        showToast('Error loading reminders', 'error');
     }
 }
 
-// Save reminders
+// ===== Save Reminders =====
 function saveReminders() {
     localStorage.setItem('callremind_reminders', JSON.stringify(reminders));
-    localStorage.setItem('callremind_scheduled', JSON.stringify(scheduledNotifications));
+    if (elements.reminderCount) {
+        elements.reminderCount.textContent = reminders.length;
+    }
 }
 
-// Handle form submit
+// ===== Handle Form Submit =====
 function handleFormSubmit(e) {
     e.preventDefault();
-
-    const reminder = {
-        contactName: contactNameInput.value.trim(),
-        phoneNumber: phoneNumberInput.value.trim(),
-        callDate: callDateInput.value,
-        callTime: callTimeInput.value,
-        notes: notesInput.value.trim()
-    };
-
+    
     // Validation
-    if (!reminder.contactName) {
+    if (!elements.contactName.value.trim()) {
         showToast('Please enter contact name', 'error');
-        contactNameInput.focus();
+        elements.contactName.focus();
         return;
     }
-
-    const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-    if (reminderDateTime <= new Date()) {
+    
+    const reminderTime = new Date(`${elements.callDate.value}T${elements.callTime.value}`);
+    if (reminderTime <= new Date()) {
         showToast('Please select a future time', 'error');
         return;
     }
-
-    // Add reminder
-    addReminder(reminder);
     
-    // Reset form
-    reminderForm.reset();
-    initializeForm();
-}
-
-// Add reminder
-function addReminder(reminder) {
-    const newReminder = {
+    // Create reminder
+    const reminder = {
         id: Date.now(),
-        contactName: reminder.contactName,
-        phoneNumber: reminder.phoneNumber || '',
-        callDate: reminder.callDate,
-        callTime: reminder.callTime,
-        notes: reminder.notes || '',
+        name: elements.contactName.value.trim(),
+        phone: elements.phoneNumber.value.trim(),
+        date: elements.callDate.value,
+        time: elements.callTime.value,
+        notes: elements.notes.value.trim(),
         createdAt: new Date().toISOString(),
-        notified: false,
-        isExpired: false
+        completed: false
     };
-
-    reminders.push(newReminder);
+    
+    // Add to list
+    reminders.push(reminder);
     saveReminders();
     renderReminders();
     updateNextCall();
+    scheduleNotification(reminder);
     
-    // Schedule notification
-    scheduleNotification(newReminder);
+    // Show success
+    showToast(`Reminder set for ${reminder.name}`, 'success');
+    sendNotification('Reminder Set', `We'll remind you to call ${reminder.name}`);
     
-    showToast(`Reminder set for ${reminder.contactName}!`, 'success');
+    // Reset form
+    elements.contactName.value = '';
+    elements.phoneNumber.value = '';
+    elements.notes.value = '';
+    initializeForm();
 }
 
-// Schedule notification
+// ===== Schedule Notification =====
 function scheduleNotification(reminder) {
-    const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
+    const reminderTime = new Date(`${reminder.date}T${reminder.time}`);
     const now = new Date();
-    const timeDiff = reminderDateTime - now;
+    const timeUntilReminder = reminderTime - now;
     
-    if (timeDiff > 0) {
-        // Store in scheduled notifications
-        scheduledNotifications[reminder.id] = {
-            reminderId: reminder.id,
-            scheduledTime: reminderDateTime.getTime(),
-            contactName: reminder.contactName
-        };
-        saveReminders();
-        
-        // Schedule desktop notification
-        setTimeout(() => {
-            triggerReminderNotification(reminder);
-        }, timeDiff);
-        
-        // Schedule 5-minute warning
-        if (timeDiff > 5 * 60 * 1000) {
-            setTimeout(() => {
-                sendWarningNotification(reminder);
-            }, timeDiff - (5 * 60 * 1000));
-        }
-        
-        console.log(`Notification scheduled for ${reminder.contactName} at ${reminder.callTime}`);
-    }
-}
-
-// Trigger reminder notification
-function triggerReminderNotification(reminder) {
-    if (Notification.permission === 'granted') {
-        const notification = new Notification('📞 Time to Call!', {
-            body: `Call ${reminder.contactName} now!`,
-            icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
-            requireInteraction: true,
-            tag: `reminder-${reminder.id}`,
-            vibrate: [200, 100, 200]
-        });
-        
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
-        
-        // Update reminder status
-        reminder.isExpired = true;
-        reminder.notified = true;
-        delete scheduledNotifications[reminder.id];
-        saveReminders();
-        renderReminders();
-        updateNextCall();
-    }
-}
-
-// Send warning notification
-function sendWarningNotification(reminder) {
-    if (Notification.permission === 'granted') {
-        new Notification('⏰ Call in 5 minutes!', {
-            body: `Call ${reminder.contactName} soon`,
-            icon: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4de.png',
-            tag: `warning-${reminder.id}`
-        });
-    }
-}
-
-// Reschedule all notifications
-function rescheduleAllNotifications() {
-    const now = new Date().getTime();
-    
-    // Clear existing timeouts
-    for (const id in scheduledNotifications) {
-        const scheduled = scheduledNotifications[id];
-        const reminder = reminders.find(r => r.id == id);
-        
-        if (reminder && scheduled.scheduledTime > now) {
-            const timeDiff = scheduled.scheduledTime - now;
+    if (timeUntilReminder > 0) {
+        // Main notification
+        timeouts[reminder.id] = setTimeout(() => {
+            sendNotification('📞 Time to Call!', `Call ${reminder.name} now!`);
             
-            // Reschedule notification
-            setTimeout(() => {
-                triggerReminderNotification(reminder);
-            }, timeDiff);
+            reminder.completed = true;
+            saveReminders();
+            renderReminders();
+            updateNextCall();
             
-            // Reschedule warning
-            if (timeDiff > 5 * 60 * 1000) {
-                setTimeout(() => {
-                    sendWarningNotification(reminder);
-                }, timeDiff - (5 * 60 * 1000));
-            }
+            delete timeouts[reminder.id];
+        }, timeUntilReminder);
+        
+        // 5-minute warning
+        if (timeUntilReminder > 5 * 60 * 1000) {
+            setTimeout(() => {
+                sendNotification('⏰ 5 Minutes Left', `Call ${reminder.name} soon!`);
+            }, timeUntilReminder - 5 * 60 * 1000);
         }
     }
 }
 
-// Handle reminder trigger from service worker
-function handleReminderTrigger(reminderId) {
-    const reminder = reminders.find(r => r.id == reminderId);
-    if (reminder) {
-        reminder.isExpired = true;
-        reminder.notified = true;
-        delete scheduledNotifications[reminderId];
-        saveReminders();
-        renderReminders();
-        updateNextCall();
-    }
+// ===== Schedule All Notifications =====
+function scheduleAllNotifications() {
+    Object.values(timeouts).forEach(clearTimeout);
+    timeouts = {};
+    reminders.forEach(scheduleNotification);
 }
 
-// Install App
-async function handleInstall() {
-    if (!deferredPrompt) {
-        showToast('Use Chrome menu (⋮) → "Install callremind"', 'info');
-        return;
-    }
-    
-    try {
-        // Show install prompt
-        deferredPrompt.prompt();
-        
-        // Wait for user response
-        const choiceResult = await deferredPrompt.userChoice;
-        
-        if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted install');
-            showToast('Installing app...', 'success');
-            installCard.classList.add('hidden');
-        } else {
-            console.log('User dismissed install');
-            showToast('Installation cancelled', 'warning');
-        }
-        
-        deferredPrompt = null;
-        
-    } catch (error) {
-        console.error('Install error:', error);
-        showToast('Installation failed', 'error');
-    }
-}
-
-// Delete reminder
-function deleteReminder(id) {
-    const reminder = reminders.find(r => r.id === id);
-    if (reminder) {
-        reminderToDelete = reminder;
-        showDeleteConfirmation(reminder);
-    }
-}
-
-function showDeleteConfirmation(reminder) {
-    reminderDetails.innerHTML = `
-        <strong><i class="fas fa-user"></i> ${reminder.contactName}</strong>
-        ${reminder.phoneNumber ? `<div><i class="fas fa-phone"></i> ${reminder.phoneNumber}</div>` : ''}
-        <div><i class="far fa-calendar"></i> ${reminder.callDate} at ${reminder.callTime}</div>
-    `;
-    deleteModal.classList.remove('hidden');
-}
-
-function confirmDelete() {
-    if (reminderToDelete) {
-        // Remove from arrays
-        reminders = reminders.filter(r => r.id !== reminderToDelete.id);
-        delete scheduledNotifications[reminderToDelete.id];
-        
-        // Save and update
-        saveReminders();
-        renderReminders();
-        updateNextCall();
-        
-        // Close modal
-        deleteModal.classList.add('hidden');
-        reminderToDelete = null;
-        
-        showToast('Reminder deleted', 'success');
-    }
-}
-
-// Render reminders
+// ===== Render Reminders =====
 function renderReminders() {
-    // Sort by date/time (soonest first)
-    reminders.sort((a, b) => {
-        const timeA = new Date(`${a.callDate}T${a.callTime}`).getTime();
-        const timeB = new Date(`${b.callDate}T${b.callTime}`).getTime();
-        return timeA - timeB;
-    });
-    
-    // Update count
-    reminderCount.textContent = reminders.length;
-    
-    // Clear list
-    reminderList.innerHTML = '';
+    if (!elements.reminderList) return;
     
     if (reminders.length === 0) {
-        // Show empty state
-        reminderList.innerHTML = `
+        elements.reminderList.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-phone-slash"></i>
-                <h4>No reminders</h4>
-                <p>Add your first reminder</p>
+                <p>No reminders yet</p>
+                <small>Add your first reminder</small>
             </div>
         `;
         return;
     }
     
+    // Sort by time
+    reminders.sort((a, b) => {
+        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+    });
+    
+    let html = '';
     const now = new Date();
     
-    // Create reminder items
-    reminders.forEach(reminder => {
-        const reminderDateTime = new Date(`${reminder.callDate}T${reminder.callTime}`);
-        const timeDiff = reminderDateTime - now;
-        const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000; // Less than 1 hour
-        const isExpired = timeDiff <= 0 || reminder.isExpired;
+    reminders.forEach(r => {
+        const reminderTime = new Date(`${r.date}T${r.time}`);
+        const timeDiff = reminderTime - now;
+        const isUrgent = timeDiff > 0 && timeDiff < 60 * 60 * 1000;
         
-        const reminderElement = document.createElement('div');
-        reminderElement.className = `reminder-item ${isUrgent ? 'urgent' : ''} ${isExpired ? 'expired' : ''}`;
-        reminderElement.innerHTML = `
-            <div class="reminder-header">
-                <div>
-                    <div class="reminder-name">
-                        <i class="fas fa-user"></i> ${reminder.contactName}
+        html += `
+            <div class="reminder-item ${isUrgent ? 'urgent' : ''}" data-id="${r.id}">
+                <div class="reminder-header">
+                    <div>
+                        <div class="reminder-name">
+                            <i class="fas fa-user"></i> ${escapeHtml(r.name)}
+                        </div>
+                        ${r.phone ? `<div class="reminder-phone"><i class="fas fa-phone"></i> ${escapeHtml(r.phone)}</div>` : ''}
                     </div>
-                    ${reminder.phoneNumber ? `<div class="reminder-phone"><i class="fas fa-phone"></i> ${reminder.phoneNumber}</div>` : ''}
+                    <div class="reminder-time">
+                        <i class="far fa-calendar"></i> ${r.date} ${r.time}
+                    </div>
                 </div>
-                <div class="reminder-time">
-                    <i class="far fa-calendar"></i> ${reminder.callDate} at ${reminder.callTime}
+                ${r.notes ? `<div class="reminder-notes"><i class="fas fa-sticky-note"></i> ${escapeHtml(r.notes)}</div>` : ''}
+                <div class="reminder-actions">
+                    <button class="btn btn-secondary complete-btn">
+                        <i class="fas fa-check"></i> Done
+                    </button>
+                    <button class="btn btn-danger delete-btn">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
                 </div>
-            </div>
-            ${reminder.notes ? `<div class="reminder-notes"><i class="fas fa-sticky-note"></i> ${reminder.notes}</div>` : ''}
-            <div class="reminder-actions">
-                <button class="btn btn-primary complete-btn" data-id="${reminder.id}">
-                    <i class="fas fa-check"></i> Done
-                </button>
-                <button class="btn btn-danger delete-btn" data-id="${reminder.id}">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
             </div>
         `;
-        
-        reminderList.appendChild(reminderElement);
     });
+    
+    elements.reminderList.innerHTML = html;
     
     // Add event listeners
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const id = parseInt(e.target.closest('.delete-btn').dataset.id);
+            const id = parseInt(e.target.closest('.reminder-item').dataset.id);
             deleteReminder(id);
         });
     });
     
     document.querySelectorAll('.complete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const id = parseInt(e.target.closest('.complete-btn').dataset.id);
+            const id = parseInt(e.target.closest('.reminder-item').dataset.id);
             completeReminder(id);
         });
     });
 }
 
-// Complete reminder
+// ===== Escape HTML =====
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===== Delete Reminder =====
+function deleteReminder(id) {
+    const reminder = reminders.find(r => r.id === id);
+    if (reminder) {
+        reminderToDelete = reminder;
+        
+        if (elements.reminderDetails) {
+            elements.reminderDetails.innerHTML = `
+                <strong><i class="fas fa-user"></i> ${escapeHtml(reminder.name)}</strong>
+                ${reminder.phone ? `<div><i class="fas fa-phone"></i> ${escapeHtml(reminder.phone)}</div>` : ''}
+                <div><i class="far fa-calendar"></i> ${reminder.date} at ${reminder.time}</div>
+            `;
+        }
+        
+        showModal();
+    }
+}
+
+// ===== Complete Reminder =====
 function completeReminder(id) {
-    const index = reminders.findIndex(r => r.id === id);
-    if (index !== -1) {
-        // Remove from scheduled
-        delete scheduledNotifications[id];
+    reminders = reminders.filter(r => r.id !== id);
+    
+    if (timeouts[id]) {
+        clearTimeout(timeouts[id]);
+        delete timeouts[id];
+    }
+    
+    saveReminders();
+    renderReminders();
+    updateNextCall();
+    showToast('Reminder completed', 'success');
+}
+
+// ===== Confirm Delete =====
+function confirmDelete() {
+    if (reminderToDelete) {
+        reminders = reminders.filter(r => r.id !== reminderToDelete.id);
         
-        // Remove from reminders
-        reminders.splice(index, 1);
+        if (timeouts[reminderToDelete.id]) {
+            clearTimeout(timeouts[reminderToDelete.id]);
+            delete timeouts[reminderToDelete.id];
+        }
         
-        // Save and update
         saveReminders();
         renderReminders();
         updateNextCall();
+        showToast('Reminder deleted', 'success');
         
-        showToast('Reminder completed', 'success');
+        reminderToDelete = null;
+        hideModal();
     }
 }
 
-// Update next call
+// ===== Update Next Call =====
 function updateNextCall() {
+    if (!elements.nextCallCard || !elements.nextContact || !elements.nextTime) return;
+    
     const now = new Date();
-    const upcomingReminders = reminders.filter(r => {
-        const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-        return reminderDateTime > now && !r.isExpired;
+    const upcoming = reminders.filter(r => {
+        return new Date(`${r.date}T${r.time}`) > now;
     });
     
-    if (upcomingReminders.length === 0) {
-        nextCallCard.classList.add('hidden');
+    if (upcoming.length === 0) {
+        elements.nextCallCard.classList.add('hidden');
         return;
     }
     
-    // Get the next reminder (soonest)
-    const nextReminder = upcomingReminders.sort(
-        (a, b) => new Date(`${a.callDate}T${a.callTime}`) - new Date(`${b.callDate}T${b.callTime}`)
-    )[0];
+    upcoming.sort((a, b) => {
+        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+    });
     
-    nextCallCard.classList.remove('hidden');
-    nextContact.textContent = nextReminder.contactName;
-    nextTime.textContent = nextReminder.callTime;
+    const next = upcoming[0];
+    elements.nextCallCard.classList.remove('hidden');
+    elements.nextContact.textContent = next.name;
+    elements.nextTime.textContent = next.time;
 }
 
-// Start countdown
+// ===== Start Countdown =====
 function startCountdown() {
-    if (window.countdownInterval) clearInterval(window.countdownInterval);
+    if (!elements.countdown) return;
     
-    window.countdownInterval = setInterval(() => {
+    setInterval(() => {
         const now = new Date();
-        const upcomingReminders = reminders.filter(r => {
-            const reminderDateTime = new Date(`${r.callDate}T${r.callTime}`);
-            return reminderDateTime > now && !r.isExpired;
+        const upcoming = reminders.filter(r => {
+            return new Date(`${r.date}T${r.time}`) > now;
         });
         
-        if (upcomingReminders.length === 0) {
-            countdownElement.textContent = '--:--:--';
-            nextCallCard.classList.add('hidden');
+        if (upcoming.length === 0) {
+            elements.countdown.textContent = '--:--:--';
             return;
         }
         
-        // Get the next reminder
-        const nextReminder = upcomingReminders.sort(
-            (a, b) => new Date(`${a.callDate}T${a.callTime}`) - new Date(`${b.callDate}T${b.callTime}`)
-        )[0];
+        upcoming.sort((a, b) => {
+            return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
+        });
         
-        const reminderDateTime = new Date(`${nextReminder.callDate}T${nextReminder.callTime}`);
-        const timeDiff = reminderDateTime - now;
+        const next = upcoming[0];
+        const nextTime = new Date(`${next.date}T${next.time}`);
+        const diff = nextTime - now;
         
-        if (timeDiff > 0) {
-            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        if (diff > 0) {
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             
-            countdownElement.textContent = 
+            elements.countdown.textContent = 
                 `${hours.toString().padStart(2, '0')}:` +
                 `${minutes.toString().padStart(2, '0')}:` +
                 `${seconds.toString().padStart(2, '0')}`;
-        } else {
-            countdownElement.textContent = '--:--:--';
         }
     }, 1000);
 }
 
-// Show Toast
-function showToast(message, type = 'info') {
-    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+// ===== Start Live Clock =====
+function startLiveClock() {
+    if (!elements.liveTime) return;
     
-    let bgColor = '#4361ee';
-    let icon = 'ℹ️';
-    
-    switch(type) {
-        case 'success':
-            bgColor = '#4cc9f0';
-            icon = '✅';
-            break;
-        case 'error':
-            bgColor = '#f72585';
-            icon = '❌';
-            break;
-        case 'warning':
-            bgColor = '#f8961e';
-            icon = '⚠️';
-            break;
-    }
-    
-    toast.innerHTML = `${icon} ${message}`;
-    toast.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${darkenColor(bgColor, 20)} 100%)`;
-    toast.classList.remove('hidden');
-    
-    window.toastTimeout = setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 3000);
+    setInterval(() => {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        elements.liveTime.textContent = `${hours}:${minutes}`;
+    }, 1000);
 }
 
-// Helper: Darken color
-function darkenColor(color, percent) {
-    let num = parseInt(color.replace("#", ""), 16);
-    let amt = Math.round(2.55 * percent);
-    let R = (num >> 16) - amt;
-    let G = (num >> 8 & 0x00FF) - amt;
-    let B = (num & 0x0000FF) - amt;
+// ===== Handle Install =====
+async function handleInstall() {
+    if (!deferredPrompt) {
+        showToast('Click browser menu → Install "callremind"', 'info');
+        return;
+    }
     
-    return "#" + (
-        0x1000000 +
-        (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-        (B < 255 ? B < 1 ? 0 : B : 255)
-    ).toString(16).slice(1);
+    try {
+        deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        
+        if (result.outcome === 'accepted') {
+            showToast('Installing app...', 'success');
+            if (elements.installCard) {
+                elements.installCard.classList.add('hidden');
+            }
+        } else {
+            showToast('Installation cancelled', 'warning');
+        }
+        
+        deferredPrompt = null;
+    } catch (error) {
+        showToast('Installation failed', 'error');
+    }
+}
+
+// ===== Modal Controls =====
+function showModal() {
+    if (elements.deleteModal) {
+        elements.deleteModal.classList.add('show');
+    }
+}
+
+function hideModal() {
+    if (elements.deleteModal) {
+        elements.deleteModal.classList.remove('show');
+    }
+    reminderToDelete = null;
+}
+
+// ===== Show Toast =====
+function showToast(message, type = 'info') {
+    if (!elements.toast) return;
+    
+    const colors = {
+        success: '#4cc9f0',
+        error: '#f72585',
+        warning: '#f8961e',
+        info: '#4361ee'
+    };
+    
+    elements.toast.textContent = message;
+    elements.toast.style.background = colors[type] || colors.info;
+    elements.toast.classList.add('show');
+    
+    setTimeout(() => {
+        elements.toast.classList.remove('show');
+    }, 3000);
 }
