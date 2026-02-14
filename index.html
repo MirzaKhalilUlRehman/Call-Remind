@@ -3,156 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>callremind - Call Reminder App</title>
+    <title>callremind - Never Miss a Call</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4361ee">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-capable" content="yes">
 </head>
 <body>
-    <!-- Step 1: Enable Notifications -->
-    <div id="step1" class="step-screen">
-        <div class="step-card">
-            <div class="step-icon">
-                <i class="fas fa-bell"></i>
-            </div>
+    <!-- Notification Screen -->
+    <div id="notificationScreen" class="screen">
+        <div class="screen-card">
+            <i class="fas fa-bell screen-icon"></i>
             <h2>Enable Notifications</h2>
-            <p>This app needs notifications to work</p>
+            <p>We need your permission to send you call reminders</p>
             <button id="enableBtn" class="btn btn-primary">
-                <i class="fas fa-bell"></i> Enable Now
+                <i class="fas fa-bell"></i> Enable Notifications
             </button>
         </div>
     </div>
 
-    <!-- Step 2: Main App -->
-    <div id="step2" class="main-container hidden">
+    <!-- Main App -->
+    <div id="mainApp" class="app hidden">
         <!-- Header -->
         <header class="header">
             <div class="logo">
                 <i class="fas fa-phone-alt"></i>
                 <h1>call<span>remind</span></h1>
             </div>
-            <div class="header-info">
-                <span id="currentTime" class="time-display">--:--</span>
-                <span class="notification-status active">
+            <div class="header-right">
+                <span class="live-time" id="liveTime">--:--</span>
+                <span class="status-badge">
                     <i class="fas fa-bell"></i> Active
                 </span>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="two-column">
-                <!-- Left Column: Form -->
-                <div class="column-left">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-plus-circle"></i> New Reminder</h3>
+        <!-- Main Grid -->
+        <div class="grid">
+            <!-- Left Column - Form -->
+            <div class="left-col">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-plus-circle"></i>
+                        <h3>New Reminder</h3>
+                    </div>
+                    
+                    <form id="reminderForm">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Contact Name</label>
+                            <input type="text" id="contactName" placeholder="Enter name" required>
                         </div>
-                        <form id="reminderForm" class="form">
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Phone Number</label>
+                            <input type="tel" id="phoneNumber" placeholder="Optional">
+                        </div>
+                        
+                        <div class="form-row">
                             <div class="form-group">
-                                <label for="contactName">
-                                    <i class="fas fa-user"></i> Contact Name
-                                </label>
-                                <input type="text" id="contactName" placeholder="Enter name" required>
+                                <label><i class="fas fa-calendar"></i> Date</label>
+                                <input type="date" id="callDate" required>
                             </div>
-                            
                             <div class="form-group">
-                                <label for="phoneNumber">
-                                    <i class="fas fa-phone"></i> Phone Number
-                                </label>
-                                <input type="tel" id="phoneNumber" placeholder="Optional">
+                                <label><i class="fas fa-clock"></i> Time</label>
+                                <input type="time" id="callTime" required>
                             </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="callDate">
-                                        <i class="fas fa-calendar"></i> Date
-                                    </label>
-                                    <input type="date" id="callDate" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="callTime">
-                                        <i class="fas fa-clock"></i> Time
-                                    </label>
-                                    <input type="time" id="callTime" required>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notes">
-                                    <i class="fas fa-sticky-note"></i> Notes
-                                </label>
-                                <textarea id="notes" placeholder="Add notes..." rows="2"></textarea>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-bell"></i> Set Reminder
-                            </button>
-                        </form>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><i class="fas fa-sticky-note"></i> Notes</label>
+                            <textarea id="notes" placeholder="Add notes..." rows="2"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-bell"></i> Set Reminder
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-col">
+                <!-- Next Call Card -->
+                <div id="nextCallCard" class="next-call-card hidden">
+                    <div class="card-header">
+                        <i class="fas fa-clock"></i>
+                        <h3>Next Call</h3>
+                    </div>
+                    <div class="next-call-content">
+                        <div class="countdown" id="countdown">--:--:--</div>
+                        <div class="next-call-info">
+                            <p><i class="fas fa-user"></i> <span id="nextContact">No calls</span></p>
+                            <p><i class="fas fa-clock"></i> <span id="nextTime">--:--</span></p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Everything Else -->
-                <div class="column-right">
-                    <!-- Next Call -->
-                    <div id="nextCallCard" class="card next-call hidden">
-                        <div class="card-header">
-                            <h3><i class="fas fa-clock"></i> Next Call</h3>
-                            <div id="countdown" class="countdown">--:--:--</div>
-                        </div>
-                        <div class="next-call-details">
-                            <div class="call-contact">
-                                <i class="fas fa-user"></i>
-                                <span id="nextContact">No upcoming calls</span>
-                            </div>
-                            <div class="call-time">
-                                <i class="fas fa-clock"></i>
-                                <span id="nextTime">--:--</span>
-                            </div>
-                        </div>
+                <!-- Reminders List -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list"></i>
+                        <h3>Your Reminders</h3>
+                        <span class="badge" id="reminderCount">0</span>
                     </div>
+                    <div id="reminderList" class="reminder-list"></div>
+                </div>
 
-                    <!-- Reminders List -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-list"></i> Your Reminders</h3>
-                            <span id="reminderCount" class="badge">0</span>
+                <!-- Install Card -->
+                <div id="installCard" class="install-card hidden">
+                    <div class="install-content">
+                        <i class="fas fa-download"></i>
+                        <div>
+                            <h4>Install App</h4>
+                            <p>Get reminders when browser is closed</p>
                         </div>
-                        <div id="reminderList" class="reminders-list">
-                            <!-- Empty State -->
-                            <div class="empty-state">
-                                <i class="fas fa-phone-slash"></i>
-                                <h4>No reminders</h4>
-                                <p>Add your first reminder</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Install App -->
-                    <div id="installCard" class="card install-card hidden">
-                        <div class="card-header">
-                            <h3><i class="fas fa-download"></i> Install App</h3>
-                        </div>
-                        <div class="install-content">
-                            <p>Install for best experience</p>
-                            <button id="installBtn" class="btn btn-success">
-                                <i class="fas fa-download"></i> Install Now
-                            </button>
-                            <div class="install-features">
-                                <p><i class="fas fa-check"></i> Get reminders when closed</p>
-                                <p><i class="fas fa-check"></i> Home screen shortcut</p>
-                            </div>
-                        </div>
+                        <button id="installBtn" class="btn btn-success">Install Now</button>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
 
         <!-- Footer -->
         <footer class="footer">
@@ -161,16 +133,13 @@
     </div>
 
     <!-- Delete Modal -->
-    <div id="deleteModal" class="modal hidden">
+    <div id="deleteModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-trash"></i> Confirm Delete</h3>
-            </div>
-            <div class="modal-body">
-                <p>Delete this reminder?</p>
-                <div id="reminderDetails" class="reminder-details"></div>
-            </div>
-            <div class="modal-footer">
+            <i class="fas fa-trash modal-icon"></i>
+            <h3>Delete Reminder?</h3>
+            <p>This action cannot be undone</p>
+            <div id="reminderDetails" class="reminder-preview"></div>
+            <div class="modal-actions">
                 <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
                 <button id="confirmBtn" class="btn btn-danger">Delete</button>
             </div>
@@ -178,7 +147,7 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="toast hidden"></div>
+    <div id="toast" class="toast"></div>
 
     <script src="script.js"></script>
 </body>
